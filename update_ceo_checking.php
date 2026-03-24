@@ -35,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($decision === 'approved') {
         // CRITICAL: Records the exact time of final approval!
-        $update_query = "UPDATE projects SET checking_status = 'approved', approved_at = NOW(), ceo_main_remarks = '$remarks' $file_update_query WHERE id = $id";
+        // Added: status = 'approved' to push the main project progress forward
+        $update_query = "UPDATE projects SET checking_status = 'approved', status = 'approved', approved_at = NOW(), ceo_main_remarks = '$remarks' $file_update_query WHERE id = $id";
         mysqli_query($conn, $update_query);
         
         $log_details = "CEO Main APPROVED the project. Timestamp recorded. Remarks: $remarks";

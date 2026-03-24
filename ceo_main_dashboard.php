@@ -3,7 +3,8 @@ session_start();
 include 'db.php';
 
 // CEO Main only sees projects manually transmitted to them from the Admin
-$projects_query = "SELECT * FROM projects WHERE ceo_status = 'transmitted' AND checking_status IN ('pending', 'declined') ORDER BY created_at DESC";
+// The CEO should only see projects that are actively 'pending'
+$projects_query = "SELECT * FROM projects WHERE ceo_status = 'transmitted' AND checking_status = 'pending' ORDER BY created_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 ?>
 
