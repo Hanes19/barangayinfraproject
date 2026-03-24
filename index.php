@@ -224,7 +224,7 @@ body{
   <div class="modal-content">
     <span class="close-btn" onclick="closeModal('privacyModal')">&times;</span>
     <h2>Privacy Policy</h2>
-    <p>The City Government of Valencia, Bukidnon respects your privacy and ensures that all personal information collected through Ato ni! Barangay Projects Portal is handled securely and responsibly.</p>
+    <p>The Ato ni! Barangay Projects Portal respects your privacy and ensures that all personal information collected through it is handled securely and responsibly.</p>
     <h3>Information We Collect</h3>
     <ul>
       <li>Full Name</li><li>Email Address</li><li>Contact Number</li>
