@@ -93,7 +93,7 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
             
             <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Site Inspection</span></a>
 
-            <a href="#"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
+            <a href="admin_checking.php"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
             <a href="#"><i class="fas fa-hammer"></i><span class="nav-text">Supervision and Monitoring</span></a>
 
 

@@ -17,36 +17,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "All fields are required.";
     } else {
 
+    // --- HARDCODED ROLE ASSIGNMENTS ---
     $roles = [
-    "rhealenepedrosa22@gmail.com" => "barangaycaptain",
-    "godsentgracesalazar@gmail.com" => "secretary",
-    "fheviealivio@gmail.com" => "collector",
-    "courier@example.com" => "courier",
-    "ponsecakathy@gmail.com" => "admin",
-    "jyanson@aclcbukidnon.com" => "client",
-    "cpdc@gmail.com" => "cpdc" // <-- CPDC
-];
+        "rhealenepedrosa22@gmail.com" => "barangaycaptain",
+        "godsentgracesalazar@gmail.com" => "secretary",
+        "fheviealivio@gmail.com" => "collector",
+        "courier@example.com" => "courier",
+        "ponsecakathy@gmail.com" => "admin",
+        "jyanson@aclcbukidnon.com" => "client",
+        "cpdc@gmail.com" => "cpdc",         // CPDC User
+        "ceo@gmail.com" => "ceo_main"       // <-- NEW: CEO Main User
+    ];
 
-$role = $roles[$email] ?? "resident";
+    $role = $roles[$email] ?? "resident";
 
-$_SESSION['user_id']   = 1;
-$_SESSION['full_name'] = ucfirst(explode("@", $email)[0]);
-$_SESSION['email']     = $email;
-$_SESSION['role']      = $role;
+    // Set standard session variables based on the email
+    $_SESSION['user_id']   = 1;
+    $_SESSION['full_name'] = ucfirst(explode("@", $email)[0]);
+    $_SESSION['email']     = $email;
+    $_SESSION['role']      = $role;
 
-switch($role) {
-    case "barangaycaptain": header("Location: barangaycaptain.php"); break;
-    case "secretary":       header("Location: secretary.php"); break;
-    case "collector":       header("Location: collector.php"); break;
-    case "courier":         header("Location: CourierPage.php"); break;
-    case "admin":           header("Location: admin_dashboard.php"); break;
-    case "client":          header("Location: client_dashboard.php"); break;
-    case "cpdc":            header("Location: planning.php"); break; // CPDC redirect
-    default:                header("Location: resident.php"); break;
-}
-exit();
+    // --- REDIRECT LOGIC ---
+    switch($role) {
+        case "barangaycaptain": header("Location: barangaycaptain.php"); break;
+        case "secretary":       header("Location: secretary.php"); break;
+        case "collector":       header("Location: collector.php"); break;
+        case "courier":         header("Location: CourierPage.php"); break;
+        case "admin":           header("Location: admin_dashboard.php"); break;
+        case "client":          header("Location: client_dashboard.php"); break;
+        case "cpdc":            header("Location: planning.php"); break; 
+        case "ceo_main":        header("Location: ceo_main_dashboard.php"); break; // <-- NEW: Redirect to CEO Dashboard
+        default:                header("Location: resident.php"); break;
+    }
+    exit();
   
-
     }
 }
 ?>
@@ -424,7 +428,6 @@ body {
 </head>
 <body>
 
-<!-- FULL-SCREEN VIDEO BG -->
 <video class="bg-video" autoplay muted loop playsinline>
     <source src="eng.mp4" type="video/mp4">
 </video>
@@ -432,7 +435,6 @@ body {
 
 <div class="container">
 
-    <!-- LEFT — BRANDING -->
     <div class="left">
         <div class="logo-wrap">
             <img src="cityengineerlogo.jpg" alt="Barangay Logo">
@@ -447,7 +449,6 @@ body {
         </div>
     </div>
 
-    <!-- RIGHT — SIGN IN -->
     <div class="right">
         <div class="login-box">
             <h2>Sign In</h2>
@@ -491,7 +492,6 @@ body {
 
 </div>
 
-<!-- Modals -->
 <div id="termsModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal('termsModal')">&times;</span>
