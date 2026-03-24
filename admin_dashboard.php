@@ -372,7 +372,9 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
         <div class="sidebar-menu">
             <div class="menu-label">Navigation</div>
             <a href="admin_dashboard.php" class="active"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
-            <a href="#"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning</span></a>
+            
+            <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning</span></a>
+            
             <a href="#"><i class="fas fa-map-location-dot"></i><span class="nav-text">Site Inspection</span></a>
             <a href="#"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
             <a href="#"><i class="fas fa-hammer"></i><span class="nav-text">Implementation</span></a>
@@ -384,7 +386,7 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
             <div class="sidebar-footer">
                 <a href="login.php"><i class="fas fa-sign-out-alt"></i><span class="sidebar-footer-text">Logout</span></a>
             </div>
-        </div>
+        </div>  
     </aside>
 
     <!-- MAIN CONTENT -->
