@@ -63,11 +63,10 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
             <div class="brand-text"><h4>Ato Ni! Barangay</h4></div>
         </div>
         <div class="sidebar-menu">
-            <div class="menu-label">Navigation</div>
-            <a href="admin_dashboard.php"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
-            <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Inspection</span></a>
-            <a href="admin_checking.php" class="active"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
-            <a href="admin_monitoring.php"><i class="fas fa-hard-hat"></i><span class="nav-text">Supervision & Monitoring</span></a>
+            <a href="admin_dashboard.php" class="active"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
+            <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Site Inspection</span></a>
+            <a href="admin_checking.php"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
+            <a href="admin_monitoring.php"><i class="fas fa-hammer"></i><span class="nav-text">Supervision and Monitoring</span></a>
             <a href="admin_history.php"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
             <a href="admin_completed.php"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
             <br>
