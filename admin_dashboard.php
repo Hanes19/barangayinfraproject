@@ -366,8 +366,8 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
         <div class="topbar">
             <div class="topbar-left">
                 <div>
-                    <h2 class="dashboard-title">Predictive Analytics Dashboard</h2>
-                    <p class="topbar-subtitle">AI-powered project maintenance predictions and infrastructure insights</p>
+                    <h2 class="dashboard-title">Overview Dashboard</h2>
+                    
                 </div>
             </div>
             <div class="prediction-badge">
