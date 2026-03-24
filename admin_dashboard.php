@@ -379,7 +379,7 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
             <a href="#"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
             <a href="#"><i class="fas fa-hammer"></i><span class="nav-text">Implementation</span></a>
             <a href="#"><i class="fas fa-desktop"></i><span class="nav-text">Monitoring</span></a>
-            <a href="#"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
+            <a href="admin_history.php"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
             <a href="#"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
 
             <br>

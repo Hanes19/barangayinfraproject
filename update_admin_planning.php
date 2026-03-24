@@ -5,26 +5,36 @@ include 'db.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
     
-    // Capture the new CEO status and the remarks
     $ceo_status = mysqli_real_escape_string($conn, $_POST['ceo_status']);
     $remarks = mysqli_real_escape_string($conn, $_POST['remarks']);
     $action = $_POST['action'];
 
+    // Grab the logged-in user's name from the session (fallback if not set)
+    $engineer_name = isset($_SESSION['full_name']) ? mysqli_real_escape_string($conn, $_SESSION['full_name']) : 'Admin Engineer';
+
     if ($id > 0) {
         if ($action === 'transmit') {
-            // Update the ceo_status and remarks in the database
-            $update_query = "UPDATE projects SET ceo_status='$ceo_status', remarks='$remarks' WHERE id=$id";
+            // 1. Mark as transmitted
+            $update_query = "UPDATE projects SET ceo_status='transmitted', remarks='$remarks' WHERE id=$id";
             mysqli_query($conn, $update_query);
             
-            // Redirect back with "transmitted" success message
+            // 2. Log the action
+            $log_details = "Transmitted project to Main Office. Remarks: $remarks";
+            $log_query = "INSERT INTO project_logs (project_id, user_name, action_details) VALUES ($id, '$engineer_name', '$log_details')";
+            mysqli_query($conn, $log_query);
+            
             header("Location: admin_planning.php?msg=transmitted");
             exit();
         } else {
-            // Standard "Save" action
+            // 1. Standard Save
             $update_query = "UPDATE projects SET ceo_status='$ceo_status', remarks='$remarks' WHERE id=$id";
             mysqli_query($conn, $update_query);
             
-            // Redirect back with "updated" success message
+            // 2. Log the action
+            $log_details = "Updated CEO Approval to '" . ucfirst($ceo_status) . "'. Remarks: $remarks";
+            $log_query = "INSERT INTO project_logs (project_id, user_name, action_details) VALUES ($id, '$engineer_name', '$log_details')";
+            mysqli_query($conn, $log_query);
+            
             header("Location: admin_planning.php?msg=updated");
             exit();
         }

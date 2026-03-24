@@ -2,8 +2,10 @@
 session_start();
 include 'db.php';
 
+
 // Fetch all projects for admin planning view
-$projects_query = "SELECT * FROM projects ORDER BY created_at DESC";
+// Fetch all active projects (hide transmitted ones)
+$projects_query = "SELECT * FROM projects WHERE ceo_status != 'transmitted' OR ceo_status IS NULL ORDER BY created_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 ?>
 
@@ -88,12 +90,16 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
         <div class="sidebar-menu">
             <div class="menu-label">Navigation</div>
             <a href="admin_dashboard.php"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
+            
             <a href="admin_planning.php" class="active"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning</span></a>
+            
             <a href="#"><i class="fas fa-map-location-dot"></i><span class="nav-text">Site Inspection</span></a>
             <a href="#"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
             <a href="#"><i class="fas fa-hammer"></i><span class="nav-text">Implementation</span></a>
             <a href="#"><i class="fas fa-desktop"></i><span class="nav-text">Monitoring</span></a>
-            <a href="#"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
+            
+            <a href="admin_history.php"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
+            
             <a href="#"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
             <br>
             <div class="sidebar-footer">
