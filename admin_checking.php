@@ -2,9 +2,9 @@
 session_start();
 include 'db.php';
 
-// Fetch only projects that have passed Planning and were transmitted
-// Fetch only projects that have passed Planning and were transmitted or approved
-$projects_query = "SELECT * FROM projects WHERE ceo_status IN ('transmitted', 'approved') ORDER BY created_at DESC";
+
+// Fetch projects that are in checking phase, but HIDE them once checking_status is 'approved'
+$projects_query = "SELECT * FROM projects WHERE ceo_status IN ('transmitted', 'approved') AND (checking_status != 'approved' OR checking_status IS NULL) ORDER BY created_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 ?>
 
@@ -107,97 +107,65 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                             <th width="20%">Admin Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+<tbody>
                         <?php
                         if($projects_result && mysqli_num_rows($projects_result) > 0) {
                             while($project = mysqli_fetch_assoc($projects_result)) {
-                                $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : "#";
-                                $checking_status = isset($project['checking_status']) ? strtolower($project['checking_status']) : 'pending';
-                                $ceo_status = isset($project['ceo_status']) ? strtolower($project['ceo_status']) : '';
-                                $attempts = isset($project['submission_attempts']) ? intval($project['submission_attempts']) : 0;
-                                $ceo_remarks = !empty($project['ceo_main_remarks']) ? htmlspecialchars($project['ceo_main_remarks']) : 'None';
-                                
-                                // Unique form ID for linking the input across columns
-                                $form_id = "resubmit_form_" . $project['id'];
-                                
-                                // Status Styling
-                                if ($checking_status == 'approved') {
-                                    $badge = "<span class='badge bg-success'><i class='fas fa-check-circle me-1'></i> Approved</span>";
-                                } elseif ($checking_status == 'declined') {
-                                    $badge = "<span class='badge bg-danger'><i class='fas fa-times-circle me-1'></i> Declined</span>";
-                                } elseif ($ceo_status == 'approved') {
-                                    $badge = "<span class='badge bg-info text-dark'><i class='fas fa-file-signature me-1'></i> Ready for Submission</span>";
-                                } else {
-                                    $badge = "<span class='badge bg-warning text-dark'><i class='fas fa-hourglass-half me-1'></i> Pending Review</span>";
-                                }
+                                $type = !empty($project['implementation_type']) ? htmlspecialchars(ucfirst($project['implementation_type'])) : 'Pending';
+                                $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecialchars($project['inspection_image']) : "#";
+                                $spend = !empty($project['spend_amount']) ? htmlspecialchars($project['spend_amount']) : 'N/A';
+                                $timeline = !empty($project['program_timeline']) ? nl2br(htmlspecialchars($project['program_timeline'])) : 'N/A';
+                                $monitoring_status = isset($project['monitoring_status']) ? $project['monitoring_status'] : 'pending';
 
                                 echo "<tr>";
-                                
-                                // Col 1: Project Name
+                                echo "<form action='update_admin_monitoring.php' method='POST'>";
+                                echo "<input type='hidden' name='id' value='{$project['id']}'>";
+
+                                // Col 1: Name
                                 echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
-                                
-                                // Col 2: Document (View + Upload/Replace Button)
+
+                                // Col 2: Type
+                                echo "<td><span class='badge bg-secondary px-2 py-1'><i class='fas fa-tag me-1'></i> $type</span></td>";
+
+                                // Col 3: Finished Image
                                 echo "<td>";
-                                echo "<a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary mb-1 w-100'><i class='fas fa-file-pdf'></i> View Doc</a>";
-                                
-                                // Show file upload if it's the first submission OR if it was declined
-                                if ($checking_status == 'declined' || $ceo_status == 'approved') {
-                                    echo "<div class='mt-2 border-top pt-2'>";
-                                    $label = ($ceo_status == 'approved') ? "Attach Document:" : "Replace File:";
-                                    echo "<small class='text-primary fw-bold d-block mb-1' style='font-size: 0.7rem;'><i class='fas fa-upload'></i> $label</small>";
-                                    echo "<input type='file' name='new_document' form='$form_id' class='form-control form-control-sm' accept='.pdf,.doc,.docx' title='Upload document'>";
-                                    echo "</div>";
-                                }
-                                echo "</td>";
-                                
-                                // Col 3 & 4: Status and Attempts
-                                echo "<td>$badge</td>";
-                                echo "<td><span class='badge bg-secondary'>$attempts / 3</span></td>";
-                                
-                                // Col 5: Suggestions column
-                                echo "<td>";
-                                if ($checking_status == 'declined') {
-                                    echo "<div class='suggestion-box'><i class='fas fa-exclamation-triangle me-1'></i> $ceo_remarks</div>";
-                                } elseif ($ceo_status == 'approved') {
-                                    echo "<span class='text-muted small'>Please attach the final file and submit to CEO.</span>";
+                                if (!empty($project['inspection_image'])) {
+                                    echo "<a href='$img_path' target='_blank' class='btn btn-sm btn-outline-info w-100'><i class='fas fa-image me-1'></i> View Photo</a>";
                                 } else {
-                                    echo "<span class='text-muted small'>Waiting on review...</span>";
+                                    echo "<span class='text-muted small'><i class='fas fa-clock me-1'></i> Waiting for upload</span>";
                                 }
                                 echo "</td>";
-                                
-                                // Col 6: Actions Column
+
+                                // Col 4: Inspection Details
                                 echo "<td>";
-                                if ($checking_status == 'approved') {
-                                    $date = date('M d, Y h:i A', strtotime($project['approved_at']));
-                                    echo "<span class='text-success fw-bold small'><i class='fas fa-flag-checkered me-1'></i> Finalized on $date</span>";
-                                } elseif ($ceo_status == 'approved') {
-                                    // FIRST SUBMISSION FORM
-                                    echo "<form id='$form_id' action='update_admin_checking.php' method='POST' enctype='multipart/form-data' class='d-flex flex-column gap-2'>
-                                            <input type='hidden' name='id' value='{$project['id']}'>
-                                            <input type='hidden' name='current_attempts' value='0'>
-                                            <input type='hidden' name='is_first_submission' value='1'>
-                                            <textarea name='admin_notes' class='form-control form-control-sm' rows='2' placeholder='Add initial notes...'></textarea>
-                                            <button type='submit' class='btn btn-sm btn-success w-100'><i class='fas fa-paper-plane me-1'></i> Submit to CEO</button>
-                                          </form>";
-                                } elseif ($checking_status == 'declined') {
-                                    // RESUBMISSION FORM
-                                    $next_attempt = $attempts + 1;
-                                    echo "<form id='$form_id' action='update_admin_checking.php' method='POST' enctype='multipart/form-data' class='d-flex flex-column gap-2'>
-                                            <input type='hidden' name='id' value='{$project['id']}'>
-                                            <input type='hidden' name='current_attempts' value='$attempts'>
-                                            <input type='hidden' name='is_first_submission' value='0'>
-                                            <textarea name='admin_notes' class='form-control form-control-sm' rows='2' placeholder='Type fixes made...' required></textarea>
-                                            <button type='submit' class='btn btn-sm btn-primary w-100'><i class='fas fa-redo me-1'></i> Resubmit (Try $next_attempt)</button>
-                                          </form>";
+                                if ($monitoring_status == 'inspection_requested') {
+                                    if (strtolower($project['implementation_type']) == 'contract') {
+                                        echo "<div class='data-box'>";
+                                        echo "<strong class='text-dark d-block mb-1'><i class='fas fa-coins text-warning me-1'></i> Spend: $spend</strong>";
+                                        echo "<span class='text-muted'><strong>Timeline:</strong> $timeline</span>";
+                                        echo "</div>";
+                                    } else {
+                                        echo "<span class='text-muted small'><i class='fas fa-info-circle me-1'></i> By Administration. Image verification only.</span>";
+                                    }
                                 } else {
-                                    echo "<span class='text-muted small'>Waiting for CEO Review</span>";
+                                    echo "<span class='text-warning fw-bold small'><i class='fas fa-spinner fa-spin me-1'></i> Pending Barangay Inspection Form</span>";
                                 }
                                 echo "</td>";
-                                
+
+                                // Col 5: Action (Disabled until Barangay submits the form)
+                                echo "<td>";
+                                if ($monitoring_status == 'inspection_requested') {
+                                    echo "<button type='submit' name='action' value='complete' class='btn btn-sm btn-success w-100 mb-1' onclick='return confirm(\"Are you sure you want to finalize this project? It will be moved to Completed.\");'><i class='fas fa-check-double me-1'></i> Verify & Complete</button>";
+                                } else {
+                                    echo "<button type='button' class='btn btn-sm btn-secondary w-100 mb-1' disabled title='Waiting for Barangay to submit inspection data'><i class='fas fa-ban me-1'></i> Verify & Complete</button>";
+                                }
+                                echo "</td>";
+
+                                echo "</form>";
                                 echo "</tr>";
                             }
                         } else {
-                            echo "<tr><td colspan='6' class='text-center py-4 text-muted'>No projects in Checking & Review yet.</td></tr>";
+                            echo "<tr><td colspan='5' class='text-center py-5 text-muted'><i class='fas fa-clipboard-list fs-1 mb-3 text-light d-block'></i>No inspection requests pending review.</td></tr>";
                         }
                         ?>
                     </tbody>

@@ -153,7 +153,6 @@ a.btn-outline-success:hover {
 <body>
 <div class="overlay">
 
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-custom mb-4 shadow-sm">
         <div class="container">
         <a class="navbar-brand fw-bold" href="#">
@@ -167,7 +166,13 @@ a.btn-outline-success:hover {
 
     <div class="container">
 
-        <!-- Centered Summary Cards -->
+    <?php if(isset($_GET['msg']) && $_GET['msg'] == 'inspection_requested'): ?>
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fas fa-check-circle me-2"></i> Inspection Request submitted! The project has been forwarded to Admin and is now marked as <strong>Ongoing</strong>.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
         <div class="row mb-4 g-3 summary-row">
             <div class="col-6 col-md-2">
                 <div class="card shadow-sm text-center">
@@ -207,7 +212,6 @@ a.btn-outline-success:hover {
             </div>
         </div>
 
-        <!-- Projects Table -->
         <div class="card shadow-sm">
             <div class="card-header">Your Submitted Projects</div>
             <div class="card-body p-0">
@@ -222,7 +226,7 @@ a.btn-outline-success:hover {
                                 <th>Status</th>
                                 <th>Progress</th>
                                 <th>Document</th>
-                                  <th>Actions</th> <!-- NEW -->
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -237,17 +241,29 @@ a.btn-outline-success:hover {
                                     case 'rejected': $progress = 0; break;
                                     default: $progress = 0;
                                 }
+                                
+                                // Safely fetch statuses
+                                $checking_status = isset($project['checking_status']) ? strtolower($project['checking_status']) : '';
+                                $monitoring_status = isset($project['monitoring_status']) ? strtolower($project['monitoring_status']) : '';
                         ?>
                             <tr>
                                 <td data-label="#"> <?php echo $i++; ?> </td>
-                                <td data-label="Title"> <?php echo $project['title']; ?> </td>
-                                <td data-label="Type"> <?php echo $project['type_of_request']; ?> </td>
+                                <td data-label="Title"> <?php echo htmlspecialchars($project['title']); ?> </td>
+                                <td data-label="Type"> <?php echo htmlspecialchars($project['type_of_request']); ?> </td>
                                 <td data-label="Budget"> <?php echo number_format($project['budget'], 2); ?> </td>
+                                
                                 <td data-label="Status">
-                                    <span class="status-badge status-<?php echo $project['status']; ?>">
+                                    <span class="status-badge status-<?php echo $project['status']; ?> mb-1 d-inline-block">
                                         <?php echo ucfirst($project['status']); ?>
                                     </span>
+                                    
+                                    <?php if ($checking_status == 'approved' && $monitoring_status != 'inspection_requested' && $monitoring_status != 'completed'): ?>
+                                        <br><small class="text-danger fw-bold" style="font-size: 0.75rem;"><i class="fas fa-exclamation-circle me-1"></i>Action Needed: Request Inspection</small>
+                                    <?php elseif ($monitoring_status == 'inspection_requested'): ?>
+                                        <br><small class="text-primary fw-bold" style="font-size: 0.75rem;"><i class="fas fa-spinner fa-spin me-1"></i>Admin Reviewing ROI...</small>
+                                    <?php endif; ?>
                                 </td>
+                                
                                 <td data-label="Progress">
                                     <div class="progress">
                                         <div class="progress-bar" role="progressbar" style="width: <?php echo $progress; ?>%;" aria-valuenow="<?php echo $progress; ?>" aria-valuemin="0" aria-valuemax="100">
@@ -256,20 +272,33 @@ a.btn-outline-success:hover {
                                     </div>
                                 </td>
                                 <td data-label="Document">
-                                    <a href="uploads/docs/<?php echo $project['application_file']; ?>" class="btn btn-sm btn-outline-success" download><i class="fas fa-download me-1"></i>Download</a>
+                                    <a href="uploads/docs/<?php echo htmlspecialchars($project['application_file']); ?>" class="btn btn-sm btn-outline-success" download><i class="fas fa-download me-1"></i>Download</a>
                                 </td>
+                                
                                 <td data-label="Actions">
-    <a href="view_progress.php?id=<?php echo $project['id']; ?>" class="btn btn-sm btn-outline-primary me-1">
-        <i class="fas fa-eye me-1"></i>View
-    </a>
-    <a href="track_progress.php?id=<?php echo $project['id']; ?>" class="btn btn-sm btn-outline-info">
-        <i class="fas fa-location-arrow me-1"></i>Track
-    </a>
-</td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <a href="view_progress.php?id=<?php echo $project['id']; ?>" class="btn btn-sm btn-outline-primary" title="View">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                        <a href="track_progress.php?id=<?php echo $project['id']; ?>" class="btn btn-sm btn-outline-info" title="Track">
+                                            <i class="fas fa-location-arrow me-1"></i>Track
+                                        </a>
+                                        
+                                        <?php if ($checking_status == 'approved' && $monitoring_status != 'inspection_requested' && $monitoring_status != 'completed'): ?>
+                                            <a href="submit_inspection_request.php?id=<?php echo $project['id']; ?>" class="btn btn-sm btn-warning fw-bold text-dark w-100 mt-1 shadow-sm">
+                                                <i class="fas fa-hard-hat me-1"></i> Request Inspection
+                                            </a>
+                                        <?php elseif ($monitoring_status == 'inspection_requested'): ?>
+                                            <button class="btn btn-sm btn-success fw-bold text-white w-100 mt-1 shadow-sm" disabled>
+                                                <i class="fas fa-check-circle me-1"></i> ROI Sent to Admin
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endwhile; ?>
                         <?php else: ?>
-                            <tr><td colspan="7" class="text-center py-3">No projects submitted yet.</td></tr>
+                            <tr><td colspan="8" class="text-center py-4 text-muted">No projects submitted yet.</td></tr>
                         <?php endif; ?>
                         </tbody>
                     </table>

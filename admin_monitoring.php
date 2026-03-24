@@ -2,10 +2,8 @@
 session_start();
 include 'db.php';
 
-// Fetch ONLY projects where the Barangay has requested an inspection
-// Fetch ALL projects approved by CEO that are not yet marked as completed
-// Fetch ALL projects approved by the CEO that are not yet marked as 'completed'
-$projects_query = "SELECT * FROM projects WHERE checking_status = 'approved' AND (monitoring_status != 'completed' OR monitoring_status IS NULL) ORDER BY approved_at DESC";
+
+$projects_query = "SELECT * FROM projects WHERE monitoring_status = 'inspection_requested' ORDER BY approved_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 ?>
 
@@ -92,11 +90,11 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                             <th width="15%">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+<tbody>
                         <?php
                         if($projects_result && mysqli_num_rows($projects_result) > 0) {
                             while($project = mysqli_fetch_assoc($projects_result)) {
-                                $type = htmlspecialchars(ucfirst($project['implementation_type']));
+                                $type = !empty($project['implementation_type']) ? htmlspecialchars(ucfirst($project['implementation_type'])) : 'Pending';
                                 $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecialchars($project['inspection_image']) : "#";
                                 $spend = !empty($project['spend_amount']) ? htmlspecialchars($project['spend_amount']) : 'N/A';
                                 $timeline = !empty($project['program_timeline']) ? nl2br(htmlspecialchars($project['program_timeline'])) : 'N/A';
@@ -104,83 +102,30 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                                 echo "<tr>";
                                 echo "<form action='update_admin_monitoring.php' method='POST'>";
                                 echo "<input type='hidden' name='id' value='{$project['id']}'>";
-                                
-                                // Name
+
+                                // Name & Type
                                 echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
-                                
-                                // Type
                                 echo "<td><span class='badge bg-secondary px-2 py-1'><i class='fas fa-tag me-1'></i> $type</span></td>";
-                                
+
                                 // Image
-                                echo "<td><a href='$img_path' target='_blank' class='btn btn-sm btn-outline-info'><i class='fas fa-image me-1'></i> View Photo</a></td>";
-                                
+                                echo "<td><a href='$img_path' target='_blank' class='btn btn-sm btn-outline-info w-100'><i class='fas fa-image me-1'></i> View Photo</a></td>";
+
                                 // Details
                                 echo "<td>";
                                 if (strtolower($project['implementation_type']) == 'contract') {
                                     echo "<div class='data-box'>";
-                                    echo "<strong class='text-dark d-block mb-1'><i class='fas fa-coins text-warning me-1'></i> Spend: $spend</strong>";
+                                    echo "<strong class='text-dark d-block mb-1'><i class='fas fa-coins text-warning me-1'></i> Spend: ₱$spend</strong>";
                                     echo "<span class='text-muted'><strong>Timeline:</strong> $timeline</span>";
                                     echo "</div>";
                                 } else {
                                     echo "<span class='text-muted small'><i class='fas fa-info-circle me-1'></i> By Administration. Image verification only.</span>";
                                 }
                                 echo "</td>";
-                                
-                                // Submit (Approve & Complete)
+
+                                // Action Button
                                 echo "<td>
                                         <button type='submit' name='action' value='complete' class='btn btn-sm btn-success w-100 mb-1' onclick='return confirm(\"Are you sure you want to finalize this project? It will be moved to Completed.\");'><i class='fas fa-check-double me-1'></i> Verify & Complete</button>
                                       </td>";
-                                
-                                echo "</form>";
-                                echo "</tr>";$type = !empty($project['implementation_type']) ? htmlspecialchars(ucfirst($project['implementation_type'])) : 'Pending';
-                                $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecialchars($project['inspection_image']) : "#";
-                                $spend = !empty($project['spend_amount']) ? htmlspecialchars($project['spend_amount']) : 'N/A';
-                                $timeline = !empty($project['program_timeline']) ? nl2br(htmlspecialchars($project['program_timeline'])) : 'N/A';
-                                $monitoring_status = isset($project['monitoring_status']) ? $project['monitoring_status'] : 'pending';
-
-                                echo "<tr>";
-                                echo "<form action='update_admin_monitoring.php' method='POST'>";
-                                echo "<input type='hidden' name='id' value='{$project['id']}'>";
-
-                                // Col 1: Name
-                                echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
-
-                                // Col 2: Type
-                                echo "<td><span class='badge bg-secondary px-2 py-1'><i class='fas fa-tag me-1'></i> $type</span></td>";
-
-                                // Col 3: Finished Image
-                                echo "<td>";
-                                if (!empty($project['inspection_image'])) {
-                                    echo "<a href='$img_path' target='_blank' class='btn btn-sm btn-outline-info w-100'><i class='fas fa-image me-1'></i> View Photo</a>";
-                                } else {
-                                    echo "<span class='text-muted small'><i class='fas fa-clock me-1'></i> Waiting for upload</span>";
-                                }
-                                echo "</td>";
-
-                                // Col 4: Inspection Details
-                                echo "<td>";
-                                if ($monitoring_status == 'inspection_requested') {
-                                    if (strtolower($project['implementation_type']) == 'contract') {
-                                        echo "<div class='data-box'>";
-                                        echo "<strong class='text-dark d-block mb-1'><i class='fas fa-coins text-warning me-1'></i> Spend: $spend</strong>";
-                                        echo "<span class='text-muted'><strong>Timeline:</strong> $timeline</span>";
-                                        echo "</div>";
-                                    } else {
-                                        echo "<span class='text-muted small'><i class='fas fa-info-circle me-1'></i> By Administration. Image verification only.</span>";
-                                    }
-                                } else {
-                                    echo "<span class='text-warning fw-bold small'><i class='fas fa-spinner fa-spin me-1'></i> Pending Barangay Inspection Form</span>";
-                                }
-                                echo "</td>";
-
-                                // Col 5: Action (Disabled until Barangay submits the form)
-                                echo "<td>";
-                                if ($monitoring_status == 'inspection_requested') {
-                                    echo "<button type='submit' name='action' value='complete' class='btn btn-sm btn-success w-100 mb-1' onclick='return confirm(\"Are you sure you want to finalize this project? It will be moved to Completed.\");'><i class='fas fa-check-double me-1'></i> Verify & Complete</button>";
-                                } else {
-                                    echo "<button type='button' class='btn btn-sm btn-secondary w-100 mb-1' disabled title='Waiting for Barangay to submit inspection data'><i class='fas fa-ban me-1'></i> Verify & Complete</button>";
-                                }
-                                echo "</td>";
 
                                 echo "</form>";
                                 echo "</tr>";
