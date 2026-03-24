@@ -17,6 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "All fields are required.";
     } else {
 
+<<<<<<< HEAD
    $roles = [
     "rhealenepedrosa22@gmail.com" => "barangaycaptain",
     "godsentgracesalazar@gmail.com" => "secretary",
@@ -27,6 +28,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     "cpdc@gmail.com" => "cpdc", // <-- CPDC
     "lnbpres@gmail.com" => "lnbpres",
 ];
+=======
+    // --- HARDCODED ROLE ASSIGNMENTS ---
+    $roles = [
+        "rhealenepedrosa22@gmail.com" => "barangaycaptain",
+        "godsentgracesalazar@gmail.com" => "secretary",
+        "fheviealivio@gmail.com" => "collector",
+        "courier@example.com" => "courier",
+        "ponsecakathy@gmail.com" => "admin",
+        "jyanson@aclcbukidnon.com" => "client",
+        "cpdc@gmail.com" => "cpdc",         // CPDC User
+        "ceo@gmail.com" => "ceo_main"       // <-- NEW: CEO Main User
+    ];
+>>>>>>> aa2067c570f0f90401387a982198818ebcc68013
 
     $role = $roles[$email] ?? "resident";
 
@@ -36,6 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $_SESSION['email']     = $email;
     $_SESSION['role']      = $role;
 
+<<<<<<< HEAD
 switch($role) {
     case "barangaycaptain": header("Location: barangaycaptain.php"); break;
     case "secretary":       header("Location: secretary.php"); break;
@@ -48,8 +63,22 @@ switch($role) {
     default:                header("Location: resident.php"); break;
 }
 exit();
+=======
+    // --- REDIRECT LOGIC ---
+    switch($role) {
+        case "barangaycaptain": header("Location: barangaycaptain.php"); break;
+        case "secretary":       header("Location: secretary.php"); break;
+        case "collector":       header("Location: collector.php"); break;
+        case "courier":         header("Location: CourierPage.php"); break;
+        case "admin":           header("Location: admin_dashboard.php"); break;
+        case "client":          header("Location: client_dashboard.php"); break;
+        case "cpdc":            header("Location: planning.php"); break; 
+        case "ceo_main":        header("Location: ceo_main_dashboard.php"); break; // <-- NEW: Redirect to CEO Dashboard
+        default:                header("Location: resident.php"); break;
+    }
+    exit();
+>>>>>>> aa2067c570f0f90401387a982198818ebcc68013
   
-
     }
 }
 ?>
