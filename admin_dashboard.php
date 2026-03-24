@@ -15,11 +15,11 @@ if ($count_result) {
         if (isset($status_counts[$row['status']])) {
             $status_counts[$row['status']] = (int)$row['count'];
             $total_projects += (int)$row['count'];
+
         }
     }
 }
-
-
+     
 // --------------------------
 // Fetch all projects for predictive analysis
 // --------------------------

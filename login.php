@@ -1,6 +1,19 @@
 <?php
 session_start();
 
+// --- HARDCODED ROLE ASSIGNMENTS ---
+$roles = [
+    "rhealenepedrosa22@gmail.com" => "barangaycaptain",
+    "godsentgracesalazar@gmail.com" => "secretary",
+    "fheviealivio@gmail.com" => "collector",
+    "courier@example.com" => "courier",
+    "ponsecakathy@gmail.com" => "admin",
+    "jyanson@aclcbukidnon.com" => "client",
+    "cpdc@gmail.com" => "cpdc",          // CPDC User
+    "ceo@gmail.com" => "ceo_main",       // CEO Main User
+    "lnbpres@gmail.com" => "lnbpres",    // LNB President User
+];
+
 $error = "";
 $success = "";
 
@@ -17,71 +30,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "All fields are required.";
     } else {
 
-<<<<<<< HEAD
-   $roles = [
-    "rhealenepedrosa22@gmail.com" => "barangaycaptain",
-    "godsentgracesalazar@gmail.com" => "secretary",
-    "fheviealivio@gmail.com" => "collector",
-    "courier@example.com" => "courier",
-    "ponsecakathy@gmail.com" => "admin",
-    "jyanson@aclcbukidnon.com" => "client",
-    "cpdc@gmail.com" => "cpdc", // <-- CPDC
-    "lnbpres@gmail.com" => "lnbpres",
-];
-=======
-    // --- HARDCODED ROLE ASSIGNMENTS ---
-    $roles = [
-        "rhealenepedrosa22@gmail.com" => "barangaycaptain",
-        "godsentgracesalazar@gmail.com" => "secretary",
-        "fheviealivio@gmail.com" => "collector",
-        "courier@example.com" => "courier",
-        "ponsecakathy@gmail.com" => "admin",
-        "jyanson@aclcbukidnon.com" => "client",
-        "cpdc@gmail.com" => "cpdc",         // CPDC User
-        "ceo@gmail.com" => "ceo_main"       // <-- NEW: CEO Main User
-    ];
->>>>>>> aa2067c570f0f90401387a982198818ebcc68013
+        $role = $roles[$email] ?? "resident";
 
-    $role = $roles[$email] ?? "resident";
+        // Set standard session variables based on the email
+        $_SESSION['user_id']   = 1;
+        $_SESSION['full_name'] = ucfirst(explode("@", $email)[0]);
+        $_SESSION['email']     = $email;
+        $_SESSION['role']      = $role;
 
-    // Set standard session variables based on the email
-    $_SESSION['user_id']   = 1;
-    $_SESSION['full_name'] = ucfirst(explode("@", $email)[0]);
-    $_SESSION['email']     = $email;
-    $_SESSION['role']      = $role;
-
-<<<<<<< HEAD
-switch($role) {
-    case "barangaycaptain": header("Location: barangaycaptain.php"); break;
-    case "secretary":       header("Location: secretary.php"); break;
-    case "collector":       header("Location: collector.php"); break;
-    case "courier":         header("Location: CourierPage.php"); break;
-    case "admin":           header("Location: admin_dashboard.php"); break;
-    case "client":          header("Location: client_dashboard.php"); break;
-    case "cpdc":            header("Location: planning.php"); break;
-    case "lnbpres":         header("Location: lnbpres.php"); break;
-    default:                header("Location: resident.php"); break;
-}
-exit();
-=======
-    // --- REDIRECT LOGIC ---
-    switch($role) {
-        case "barangaycaptain": header("Location: barangaycaptain.php"); break;
-        case "secretary":       header("Location: secretary.php"); break;
-        case "collector":       header("Location: collector.php"); break;
-        case "courier":         header("Location: CourierPage.php"); break;
-        case "admin":           header("Location: admin_dashboard.php"); break;
-        case "client":          header("Location: client_dashboard.php"); break;
-        case "cpdc":            header("Location: planning.php"); break; 
-        case "ceo_main":        header("Location: ceo_main_dashboard.php"); break; // <-- NEW: Redirect to CEO Dashboard
-        default:                header("Location: resident.php"); break;
-    }
-    exit();
->>>>>>> aa2067c570f0f90401387a982198818ebcc68013
-  
+        // --- REDIRECT LOGIC ---
+        switch($role) {
+            case "barangaycaptain": header("Location: barangaycaptain.php"); break;
+            case "secretary":       header("Location: secretary.php"); break;
+            case "collector":       header("Location: collector.php"); break;
+            case "courier":         header("Location: CourierPage.php"); break;
+            case "admin":           header("Location: admin_dashboard.php"); break;
+            case "client":          header("Location: client_dashboard.php"); break;
+            case "cpdc":            header("Location: planning.php"); break; 
+            case "ceo_main":        header("Location: ceo_main_dashboard.php"); break;
+            case "lnbpres":         header("Location: lnbpres.php"); break;
+            default:                header("Location: resident.php"); break;
+        }
+        exit();
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
