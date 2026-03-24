@@ -1,12 +1,23 @@
 <?php
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "barangay_db";
+// ------------------------------
+// Database credentials
+// ------------------------------
+$servername = "localhost";
+$username = "root";       // default XAMPP username
+$password = "";           // default XAMPP password is empty
+$dbname = "barangay_db"; // replace with your database name
 
-$conn = mysqli_connect($host, $user, $pass, $dbname);
+// ------------------------------
+// Create connection
+// ------------------------------
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+// ------------------------------
+// Check connection
+// ------------------------------
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
-?>
+
+// Optional: set charset to avoid encoding issues
+$conn->set_charset("utf8mb4");
