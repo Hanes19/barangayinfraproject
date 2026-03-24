@@ -17,29 +17,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "All fields are required.";
     } else {
         $roles = [
-            "rhealenepedrosa22@gmail.com" => "barangaycaptain",
-            "godsentgracesalazar@gmail.com" => "secretary",
-            "fheviealivio@gmail.com" => "collector",
-            "courier@example.com" => "courier",
-            "ponsecakathy@gmail.com" => "admin"
-        ];
+    "rhealenepedrosa22@gmail.com" => "barangaycaptain",
+    "godsentgracesalazar@gmail.com" => "secretary",
+    "fheviealivio@gmail.com" => "collector",
+    "courier@example.com" => "courier",
+    "ponsecakathy@gmail.com" => "admin",
+    "jyanson@aclcbukidnon.com" => "client" // <-- add this line
+];
 
-        $role = $roles[$email] ?? "resident";
+$role = $roles[$email] ?? "resident";
 
-        $_SESSION['user_id'] = 1;
-        $_SESSION['full_name'] = ucfirst(explode("@", $email)[0]);
-        $_SESSION['email'] = $email;
-        $_SESSION['role'] = $role;
+$_SESSION['user_id'] = 1;
+$_SESSION['full_name'] = ucfirst(explode("@", $email)[0]);
+$_SESSION['email'] = $email;
+$_SESSION['role'] = $role;
 
-        switch($role) {
-            case "barangaycaptain": header("Location: barangaycaptain.php"); break;
-            case "secretary":       header("Location: secretary.php"); break;
-            case "collector":       header("Location: collector.php"); break;
-            case "courier":         header("Location: CourierPage.php"); break;
-            case "admin":           header("Location: admin_dashboard.php"); break;
-            default:                header("Location: resident.php"); break;
-        }
-        exit();
+switch($role) {
+    case "barangaycaptain": header("Location: barangaycaptain.php"); break;
+    case "secretary":       header("Location: secretary.php"); break;
+    case "collector":       header("Location: collector.php"); break;
+    case "courier":         header("Location: CourierPage.php"); break;
+    case "admin":           header("Location: admin_dashboard.php"); break;
+    case "client":          header("Location: client_dashboard.php"); break; // <-- new case
+    default:                header("Location: resident.php"); break;
+}
+exit();
     }
 }
 ?>

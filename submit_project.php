@@ -3,7 +3,7 @@ include 'db.php';
 $message = "";
 
 if (isset($_POST['submit_application'])) {
-    // 1. Fetch all inputs
+    // PHP backend logic remains the same
     $type_of_request = mysqli_real_escape_string($conn, $_POST['type_of_request']);
     $title           = mysqli_real_escape_string($conn, $_POST['title']);
     $loc_barangay    = mysqli_real_escape_string($conn, $_POST['location_barangay']);
@@ -15,8 +15,7 @@ if (isset($_POST['submit_application'])) {
     
     $date_today = date("F j, Y");
     
-    // 2. GENERATE THE WORD DOCUMENT CONTENT
-    // We use HTML formatting to design the formal letter
+    // Generate Word document content (same)
     $letter_content = "
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head><title>Project Proposal</title></head>
@@ -67,29 +66,20 @@ if (isset($_POST['submit_application'])) {
     </body>
     </html>";
 
-    // 3. Save the generated HTML as a .doc file on the server
     $target_dir = "uploads/docs/";
-    // Clean the title to make it a valid filename (remove spaces and special chars)
     $clean_title = preg_replace('/[^A-Za-z0-9\-]/', '_', $title);
     $generated_file_name = time() . "_" . $clean_title . "_Proposal.doc";
     
-    // Write the file to the server
     if (file_put_contents($target_dir . $generated_file_name, $letter_content)) {
-        
-        // 4. Handle Optional File Attachment (if they attached supporting docs)
-        // If no file is uploaded, we just use the generated proposal document as the primary file.
         $final_file_to_save = $generated_file_name; 
 
         if (!empty($_FILES["attachment"]["name"])) {
             $upload_name = time() . "_SUPPORTING_" . basename($_FILES["attachment"]["name"]);
             if (move_uploaded_file($_FILES["attachment"]["tmp_name"], $target_dir . $upload_name)) {
-                // We'll store both filenames separated by a comma just in case, or just prioritize the generated one.
-                // For simplicity, let's keep the generated document as the primary one in the database.
                 $message .= "<div class='alert alert-info mb-1'>Supporting document uploaded.</div>";
             }
         }
 
-        // 5. Insert into Database
         $sql = "INSERT INTO projects (
                     title, type_of_request, location_barangay, location_details, 
                     source_of_fund, punong_barangay, budget, description, application_file, status
@@ -122,20 +112,61 @@ if (isset($_POST['submit_application'])) {
     <meta charset="UTF-8">
     <title>Submit Project Application</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: url('Plaza.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 2px solid #28a745; /* green border */
+        }
+        .card-header {
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        label {
+            color: #155724;
+        }
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .alert-info {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body>
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Submit New Project Proposal</h4>
+                <div class="card-header text-center">
+                    Submit New Project Proposal
                 </div>
                 <div class="card-body p-4">
                     <?php echo $message; ?>
                     
                     <form action="submit_project.php" method="POST" enctype="multipart/form-data">
-                        
                         <div class="mb-3">
                             <label class="form-label fw-bold">Type of Request</label>
                             <select name="type_of_request" class="form-select" required>
