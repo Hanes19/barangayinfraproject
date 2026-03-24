@@ -32,65 +32,89 @@ $projects_result = mysqli_query($conn, $projects_query);
     </div>
 </nav>
 
-<div class="container">
+<div class="container-fluid px-5">
     <h3 class="fw-bold mb-4 text-dark"><i class="fas fa-search me-2"></i>Pending Reviews</h3>
     
     <?php if(isset($_GET['msg']) && $_GET['msg'] == 'processed'): ?>
-        <div class="alert alert-success"><i class="fas fa-check-circle me-2"></i> Decision saved successfully.</div>
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i> Decision and files saved successfully.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     <?php endif; ?>
 
     <div class="panel">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th width="20%">Project</th>
-                    <th width="10%">Doc</th>
-                    <th width="15%">Attempt</th>
-                    <th width="20%">Decision</th>
-                    <th width="25%">Suggestions / Remarks</th>
-                    <th width="10%">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                if($projects_result && mysqli_num_rows($projects_result) > 0) {
-                    while($project = mysqli_fetch_assoc($projects_result)) {
-                        $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : "#";
-                        $attempts = intval($project['submission_attempts']);
-                        
-                        echo "<tr>";
-                        echo "<form action='update_ceo_checking.php' method='POST'>";
-                        echo "<input type='hidden' name='id' value='{$project['id']}'>";
-                        
-                        echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
-                        echo "<td><a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary'>View Doc</a></td>";
-                        echo "<td><span class='badge bg-info text-dark'>Attempt $attempts of 3</span></td>";
-                        
-                        // Decision Dropdown
-                        echo "<td>
-                                <select name='decision' class='form-select form-select-sm' required>
-                                    <option value='approved'>Approve Project</option>
-                                    <option value='declined'>Decline / Needs Fix</option>
-                                </select>
-                              </td>";
-                              
-                        // Remarks box
-                        echo "<td><textarea name='remarks' class='form-control form-control-sm' rows='2' placeholder='If declining, what should the Admin fix?' required></textarea></td>";
-                        
-                        // Submit
-                        echo "<td><button type='submit' class='btn btn-success btn-sm w-100'><i class='fas fa-save'></i> Save</button></td>";
-                        
-                        echo "</form>";
-                        echo "</tr>";
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th width="15%">Project Name</th>
+                        <th width="15%">Document</th>
+                        <th width="10%">Attempt</th>
+                        <th width="15%">Decision</th>
+                        <th width="30%">Suggestions / Remarks</th>
+                        <th width="15%">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    if($projects_result && mysqli_num_rows($projects_result) > 0) {
+                        while($project = mysqli_fetch_assoc($projects_result)) {
+                            $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : "#";
+                            $attempts = intval($project['submission_attempts']);
+                            
+                            // Unique form ID to link inputs across columns
+                            $form_id = "ceo_form_" . $project['id'];
+                            
+                            echo "<tr>";
+                            
+                            // Col 1: Project Name
+                            echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
+                            
+                            // Col 2: Document (View + Attach Feedback File)
+                            echo "<td>";
+                            echo "<a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary mb-1 w-100'><i class='fas fa-file-pdf'></i> View Doc</a>";
+                            
+                            echo "<div class='mt-2 border-top pt-2'>";
+                            echo "<small class='text-secondary fw-bold d-block mb-1' style='font-size: 0.7rem;'><i class='fas fa-paperclip'></i> Attach Redlines (Optional):</small>";
+                            // Input linked to the form
+                            echo "<input type='file' name='ceo_document' form='$form_id' class='form-control form-control-sm' accept='.pdf,.doc,.docx' title='Attach marked-up document'>";
+                            echo "</div>";
+                            echo "</td>";
+                            
+                            // Col 3: Attempts
+                            echo "<td><span class='badge bg-info text-dark'>Attempt $attempts of 3</span></td>";
+                            
+                            // Col 4: Decision Dropdown (Linked to form)
+                            echo "<td>
+                                    <select name='decision' form='$form_id' class='form-select form-select-sm' required>
+                                        <option value='approved'>Approve Project</option>
+                                        <option value='declined'>Decline / Needs Fix</option>
+                                    </select>
+                                  </td>";
+                                  
+                            // Col 5: Remarks box (Linked to form)
+                            echo "<td><textarea name='remarks' form='$form_id' class='form-control form-control-sm' rows='3' placeholder='Leave feedback, instructions, or approval notes here...' required></textarea></td>";
+                            
+                            // Col 6: Action / Submit Button (Where the form actually lives)
+                            echo "<td>
+                                    <form id='$form_id' action='update_ceo_checking.php' method='POST' enctype='multipart/form-data'>
+                                        <input type='hidden' name='id' value='{$project['id']}'>
+                                        <button type='submit' class='btn btn-success btn-sm w-100 py-2'><i class='fas fa-save me-1'></i> Submit Decision</button>
+                                    </form>
+                                  </td>";
+                            
+                            echo "</tr>";
+                        }
+                    } else {
+                        echo "<tr><td colspan='6' class='text-center py-5 text-muted'><i class='fas fa-clipboard-check fs-2 mb-3 d-block text-light'></i>All clear! No projects pending your review.</td></tr>";
                     }
-                } else {
-                    echo "<tr><td colspan='6' class='text-center py-4 text-muted'>All clear! No projects pending your review.</td></tr>";
-                }
-                ?>
-            </tbody>
-        </table>
+                    ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

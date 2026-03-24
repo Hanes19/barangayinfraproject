@@ -84,7 +84,7 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
 
         <?php if(isset($_GET['msg']) && $_GET['msg'] == 'resubmitted'): ?>
             <div class="alert alert-primary alert-dismissible fade show" role="alert">
-                <i class="fas fa-paper-plane me-2"></i> Project successfully resubmitted to CEO Main (File attached if provided).
+                <i class="fas fa-paper-plane me-2"></i> Project successfully resubmitted to CEO Main (File replaced if provided).
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php elseif(isset($_GET['msg']) && $_GET['msg'] == 'auto_approved'): ?>
@@ -100,11 +100,11 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                     <thead>
                         <tr>
                             <th width="15%">Project Name</th>
-                            <th width="10%">Document</th>
+                            <th width="15%">Document</th>
                             <th width="15%">Review Status</th>
                             <th width="10%">Attempts</th>
                             <th width="25%">CEO Suggestions</th>
-                            <th width="25%">Admin Actions</th>
+                            <th width="20%">Admin Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,6 +116,9 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                                 $attempts = isset($project['submission_attempts']) ? intval($project['submission_attempts']) : 1;
                                 $ceo_remarks = !empty($project['ceo_main_remarks']) ? htmlspecialchars($project['ceo_main_remarks']) : 'None';
                                 
+                                // Unique form ID for linking the input across columns
+                                $form_id = "resubmit_form_" . $project['id'];
+                                
                                 // Status Styling
                                 if ($checking_status == 'approved') {
                                     $badge = "<span class='badge bg-success'><i class='fas fa-check-circle me-1'></i> Approved</span>";
@@ -126,12 +129,28 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                                 }
 
                                 echo "<tr>";
+                                
+                                // Col 1: Project Name
                                 echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
-                                echo "<td><a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary'><i class='fas fa-file-pdf'></i> View</a></td>";
+                                
+                                // Col 2: Document (View + Replace Button)
+                                echo "<td>";
+                                echo "<a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary mb-1 w-100'><i class='fas fa-file-pdf'></i> View Doc</a>";
+                                
+                                if ($checking_status == 'declined') {
+                                    echo "<div class='mt-2 border-top pt-2'>";
+                                    echo "<small class='text-danger fw-bold d-block mb-1' style='font-size: 0.7rem;'><i class='fas fa-upload'></i> Replace File:</small>";
+                                    // Notice the form='$form_id' attribute below. This ties it to the resubmit button in Col 6!
+                                    echo "<input type='file' name='new_document' form='$form_id' class='form-control form-control-sm' accept='.pdf,.doc,.docx' title='Replace document'>";
+                                    echo "</div>";
+                                }
+                                echo "</td>";
+                                
+                                // Col 3 & 4: Status and Attempts
                                 echo "<td>$badge</td>";
                                 echo "<td><span class='badge bg-secondary'>$attempts / 3</span></td>";
                                 
-                                // Suggestions column
+                                // Col 5: Suggestions column
                                 echo "<td>";
                                 if ($checking_status == 'declined') {
                                     echo "<div class='suggestion-box'><i class='fas fa-exclamation-triangle me-1'></i> $ceo_remarks</div>";
@@ -140,27 +159,25 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                                 }
                                 echo "</td>";
                                 
-                                // Actions Column
+                                // Col 6: Actions Column (Where the form actually lives)
                                 echo "<td>";
                                 if ($checking_status == 'approved') {
                                     $date = date('M d, Y h:i A', strtotime($project['approved_at']));
                                     echo "<span class='text-success fw-bold small'><i class='fas fa-flag-checkered me-1'></i> Finalized on $date</span>";
                                 } elseif ($checking_status == 'declined') {
-                                    // Resubmit Form with File Upload (enctype added)
                                     $next_attempt = $attempts + 1;
-                                    echo "<form action='update_admin_checking.php' method='POST' enctype='multipart/form-data' class='d-flex flex-column gap-2'>
+                                    // The main form wrapping the text area and submit button
+                                    echo "<form id='$form_id' action='update_admin_checking.php' method='POST' enctype='multipart/form-data' class='d-flex flex-column gap-2'>
                                             <input type='hidden' name='id' value='{$project['id']}'>
                                             <input type='hidden' name='current_attempts' value='$attempts'>
-                                            
-                                            <input type='file' name='new_document' class='form-control form-control-sm' accept='.pdf,.doc,.docx' title='Upload revised document (Optional)'>
-                                            
-                                            <textarea name='admin_notes' class='form-control form-control-sm' rows='1' placeholder='Type fixes made...' required></textarea>
+                                            <textarea name='admin_notes' class='form-control form-control-sm' rows='2' placeholder='Type fixes made...' required></textarea>
                                             <button type='submit' class='btn btn-sm btn-primary w-100'><i class='fas fa-redo me-1'></i> Resubmit (Try $next_attempt)</button>
                                           </form>";
                                 } else {
                                     echo "<span class='text-muted small'>No action needed.</span>";
                                 }
                                 echo "</td>";
+                                
                                 echo "</tr>";
                             }
                         } else {
