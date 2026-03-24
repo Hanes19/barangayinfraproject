@@ -4,7 +4,7 @@ include 'db.php';
 
 // Fetch all projects for admin planning view
 // Fetch all active projects (hide transmitted ones)
-$projects_query = "SELECT * FROM projects WHERE ceo_status != 'transmitted' OR ceo_status IS NULL ORDER BY created_at DESC";
+$projects_query = "SELECT * FROM projects WHERE (ceo_status != 'transmitted' AND ceo_status != 'approved') OR ceo_status IS NULL ORDER BY created_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 ?>
 

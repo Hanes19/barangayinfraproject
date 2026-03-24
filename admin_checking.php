@@ -3,7 +3,8 @@ session_start();
 include 'db.php';
 
 // Fetch only projects that have passed Planning and were transmitted
-$projects_query = "SELECT * FROM projects WHERE ceo_status = 'transmitted' ORDER BY created_at DESC";
+// Fetch only projects that have passed Planning and were transmitted or approved
+$projects_query = "SELECT * FROM projects WHERE ceo_status IN ('transmitted', 'approved') ORDER BY created_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 ?>
 
@@ -112,7 +113,8 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                             while($project = mysqli_fetch_assoc($projects_result)) {
                                 $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : "#";
                                 $checking_status = isset($project['checking_status']) ? strtolower($project['checking_status']) : 'pending';
-                                $attempts = isset($project['submission_attempts']) ? intval($project['submission_attempts']) : 1;
+                                $ceo_status = isset($project['ceo_status']) ? strtolower($project['ceo_status']) : '';
+                                $attempts = isset($project['submission_attempts']) ? intval($project['submission_attempts']) : 0;
                                 $ceo_remarks = !empty($project['ceo_main_remarks']) ? htmlspecialchars($project['ceo_main_remarks']) : 'None';
                                 
                                 // Unique form ID for linking the input across columns
@@ -123,6 +125,8 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                                     $badge = "<span class='badge bg-success'><i class='fas fa-check-circle me-1'></i> Approved</span>";
                                 } elseif ($checking_status == 'declined') {
                                     $badge = "<span class='badge bg-danger'><i class='fas fa-times-circle me-1'></i> Declined</span>";
+                                } elseif ($ceo_status == 'approved') {
+                                    $badge = "<span class='badge bg-info text-dark'><i class='fas fa-file-signature me-1'></i> Ready for Submission</span>";
                                 } else {
                                     $badge = "<span class='badge bg-warning text-dark'><i class='fas fa-hourglass-half me-1'></i> Pending Review</span>";
                                 }
@@ -132,15 +136,16 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                                 // Col 1: Project Name
                                 echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
                                 
-                                // Col 2: Document (View + Replace Button)
+                                // Col 2: Document (View + Upload/Replace Button)
                                 echo "<td>";
                                 echo "<a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary mb-1 w-100'><i class='fas fa-file-pdf'></i> View Doc</a>";
                                 
-                                if ($checking_status == 'declined') {
+                                // Show file upload if it's the first submission OR if it was declined
+                                if ($checking_status == 'declined' || $ceo_status == 'approved') {
                                     echo "<div class='mt-2 border-top pt-2'>";
-                                    echo "<small class='text-danger fw-bold d-block mb-1' style='font-size: 0.7rem;'><i class='fas fa-upload'></i> Replace File:</small>";
-                                    // Notice the form='$form_id' attribute below. This ties it to the resubmit button in Col 6!
-                                    echo "<input type='file' name='new_document' form='$form_id' class='form-control form-control-sm' accept='.pdf,.doc,.docx' title='Replace document'>";
+                                    $label = ($ceo_status == 'approved') ? "Attach Document:" : "Replace File:";
+                                    echo "<small class='text-primary fw-bold d-block mb-1' style='font-size: 0.7rem;'><i class='fas fa-upload'></i> $label</small>";
+                                    echo "<input type='file' name='new_document' form='$form_id' class='form-control form-control-sm' accept='.pdf,.doc,.docx' title='Upload document'>";
                                     echo "</div>";
                                 }
                                 echo "</td>";
@@ -153,27 +158,39 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                                 echo "<td>";
                                 if ($checking_status == 'declined') {
                                     echo "<div class='suggestion-box'><i class='fas fa-exclamation-triangle me-1'></i> $ceo_remarks</div>";
+                                } elseif ($ceo_status == 'approved') {
+                                    echo "<span class='text-muted small'>Please attach the final file and submit to CEO.</span>";
                                 } else {
                                     echo "<span class='text-muted small'>Waiting on review...</span>";
                                 }
                                 echo "</td>";
                                 
-                                // Col 6: Actions Column (Where the form actually lives)
+                                // Col 6: Actions Column
                                 echo "<td>";
                                 if ($checking_status == 'approved') {
                                     $date = date('M d, Y h:i A', strtotime($project['approved_at']));
                                     echo "<span class='text-success fw-bold small'><i class='fas fa-flag-checkered me-1'></i> Finalized on $date</span>";
+                                } elseif ($ceo_status == 'approved') {
+                                    // FIRST SUBMISSION FORM
+                                    echo "<form id='$form_id' action='update_admin_checking.php' method='POST' enctype='multipart/form-data' class='d-flex flex-column gap-2'>
+                                            <input type='hidden' name='id' value='{$project['id']}'>
+                                            <input type='hidden' name='current_attempts' value='0'>
+                                            <input type='hidden' name='is_first_submission' value='1'>
+                                            <textarea name='admin_notes' class='form-control form-control-sm' rows='2' placeholder='Add initial notes...'></textarea>
+                                            <button type='submit' class='btn btn-sm btn-success w-100'><i class='fas fa-paper-plane me-1'></i> Submit to CEO</button>
+                                          </form>";
                                 } elseif ($checking_status == 'declined') {
+                                    // RESUBMISSION FORM
                                     $next_attempt = $attempts + 1;
-                                    // The main form wrapping the text area and submit button
                                     echo "<form id='$form_id' action='update_admin_checking.php' method='POST' enctype='multipart/form-data' class='d-flex flex-column gap-2'>
                                             <input type='hidden' name='id' value='{$project['id']}'>
                                             <input type='hidden' name='current_attempts' value='$attempts'>
+                                            <input type='hidden' name='is_first_submission' value='0'>
                                             <textarea name='admin_notes' class='form-control form-control-sm' rows='2' placeholder='Type fixes made...' required></textarea>
                                             <button type='submit' class='btn btn-sm btn-primary w-100'><i class='fas fa-redo me-1'></i> Resubmit (Try $next_attempt)</button>
                                           </form>";
                                 } else {
-                                    echo "<span class='text-muted small'>No action needed.</span>";
+                                    echo "<span class='text-muted small'>Waiting for CEO Review</span>";
                                 }
                                 echo "</td>";
                                 
