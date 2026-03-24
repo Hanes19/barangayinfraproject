@@ -1,7 +1,9 @@
 <?php
 include 'db.php';
 
+// --------------------------
 // Fetch project counts
+// --------------------------
 $status_counts = ['pending'=>0,'approved'=>0,'rejected'=>0,'ongoing'=>0,'done'=>0];
 $total_projects = 0;
 
@@ -17,11 +19,17 @@ if ($count_result) {
     }
 }
 
-// Fetch all projects with dates for predictive analysis
+// --------------------------
+// Fetch 2 most recent projects for admin quick actions
+// --------------------------
+$recent_projects_query = "SELECT * FROM projects ORDER BY created_at DESC LIMIT 10";
+$recent_projects_result = mysqli_query($conn, $recent_projects_query);
+// --------------------------
+// Fetch all projects for predictive analysis
+// --------------------------
 $projects_query = "SELECT * FROM projects ORDER BY created_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 
-// Predictive Analysis Data
 $projects_data = [];
 $project_ages = [];
 $maintenance_predictions = [];
@@ -29,16 +37,14 @@ $maintenance_predictions = [];
 if ($projects_result && mysqli_num_rows($projects_result) > 0) {
     while ($project = mysqli_fetch_assoc($projects_result)) {
         $projects_data[] = $project;
-        
-        // Calculate project age in days (if created_at exists)
+
         if (!empty($project['created_at'])) {
             $created_date = new DateTime($project['created_at']);
             $current_date = new DateTime();
             $age_days = $current_date->diff($created_date)->days;
             $project_ages[] = $age_days;
-            
-            // Predictive logic: projects older than 180 days (6 months) may need maintenance
-            // Projects that are done and older than 90 days might need review
+
+            // Predictive maintenance logic
             if ($project['status'] == 'done' && $age_days > 90) {
                 $maintenance_predictions[] = [
                     'project' => $project['title'],
@@ -68,7 +74,9 @@ if ($projects_result && mysqli_num_rows($projects_result) > 0) {
     }
 }
 
+// --------------------------
 // Calculate predictive metrics
+// --------------------------
 $avg_project_age = !empty($project_ages) ? round(array_sum($project_ages) / count($project_ages)) : 0;
 $projects_needing_maintenance = count($maintenance_predictions);
 $predicted_monthly_maintenance = round($projects_needing_maintenance / 3); // Rough quarterly prediction
@@ -78,8 +86,8 @@ $monthly_predictions = [];
 for ($i = 0; $i < 6; $i++) {
     $monthly_predictions[] = round($projects_needing_maintenance * (0.8 + ($i * 0.1))); // Increasing trend
 }
-
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -330,6 +338,23 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+/* Make the topbar sticky */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background-color: #f4f7fb; /* match your body background */
+    padding: 16px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* Add top padding to main content to avoid being hidden under sticky topbar */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 96px 24px 24px 24px; /* top padding accounts for sticky topbar height */
+}
+
 </style>
 </head>
 <body>
@@ -518,87 +543,75 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
             </div>
         </div>
 
-        <!-- Table -->
-        <div class="panel mb-5">
-            <h5 class="section-title">Project List & Management</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
+        <!-- Recent Projects Management -->
+         <!-- Recent Projects Management -->
+<div class="panel mb-5">
+    <h5 class="section-title">Recent Projects Management</h5>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Project Name</th>
+                    <th>Certifications by CPDC<i class="fas fa-certificate" style="color: #22c55e;"></i></th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if($recent_projects_result && mysqli_num_rows($recent_projects_result) > 0): ?>
+                    <?php while($project = mysqli_fetch_assoc($recent_projects_result)): ?>
                         <tr>
-                            <th>ID</th><th>Project Name</th><th>Budget</th><th>Age (Days)</th><th>Status</th><th>Maintenance Prediction</th><th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if($projects_result && mysqli_num_rows($projects_result) > 0): ?>
-                            <?php while($project = mysqli_fetch_assoc($projects_result)): 
-                                $age_days = 0;
-                                if (!empty($project['created_at'])) {
-                                    $created_date = new DateTime($project['created_at']);
-                                    $current_date = new DateTime();
-                                    $age_days = $current_date->diff($created_date)->days;
-                                }
-                                
-                                // Determine prediction status
-                                $prediction_status = '';
-                                $prediction_color = '';
-                                if ($project['status'] == 'done' && $age_days > 90) {
-                                    $prediction_status = 'Maintenance Soon';
-                                    $prediction_color = 'warning';
-                                } elseif ($project['status'] == 'ongoing' && $age_days > 180) {
-                                    $prediction_status = 'Urgent Maintenance';
-                                    $prediction_color = 'danger';
-                                } elseif ($project['status'] == 'approved' && $age_days > 30) {
-                                    $prediction_status = 'Review Needed';
-                                    $prediction_color = 'info';
-                                } else {
-                                    $prediction_status = 'Good Condition';
-                                    $prediction_color = 'success';
-                                }
-                            ?>
-                            <tr>
-                                <td class="fw-bold text-muted">#<?php echo $project['id']; ?></td>
-                                <td class="fw-semibold"><?php echo htmlspecialchars($project['title']); ?></td>
-                                <td>₱<?php echo number_format($project['budget'],2); ?></td>
-                                <td><?php echo $age_days; ?> days</td>
-                                <td>
-                                    <?php
-                                    $status = $project['status'];
-                                    $badgeClass = 'bg-secondary';
-                                    if($status=='done') $badgeClass='bg-success';
-                                    elseif($status=='rejected') $badgeClass='bg-danger';
-                                    elseif($status=='ongoing') $badgeClass='bg-warning text-dark';
-                                    elseif($status=='approved') $badgeClass='bg-primary';
-                                    ?>
-                                    <span class="badge badge-status <?php echo $badgeClass;?>"><?php echo strtoupper($status);?></span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-<?php echo $prediction_color;?>"><?php echo $prediction_status;?></span>
-                                </td>
-                                <td>
-                                    <form action="update_status.php" method="POST" class="d-flex gap-2">
-                                        <input type="hidden" name="id" value="<?php echo $project['id'];?>">
-                                        <select name="status" class="form-select form-select-sm rounded-3" style="width:130px;">
-                                            <option value="pending" <?php if($status=='pending') echo 'selected';?>>Pending</option>
-                                            <option value="approved" <?php if($status=='approved') echo 'selected';?>>Approved</option>
-                                            <option value="ongoing" <?php if($status=='ongoing') echo 'selected';?>>Ongoing</option>
-                                            <option value="done" <?php if($status=='done') echo 'selected';?>>Done</option>
-                                            <option value="rejected" <?php if($status=='rejected') echo 'selected';?>>Rejected</option>
-                                        </select>
-                                        <button type="submit" name="update_status" class="btn btn-sm btn-success rounded-3"><i class="fas fa-save"></i></button>
+                            <td>#<?php echo $project['id']; ?></td>
+                            <td><?php echo htmlspecialchars($project['title']); ?></td>
+                            <td>
+                                <?php 
+                                $status = $project['status'];
+                                $badgeClass = 'bg-secondary';
+
+                                if($status == 'done') $badgeClass = 'bg-success';
+                                elseif($status == 'rejected') $badgeClass = 'bg-danger';
+                                elseif($status == 'ongoing') $badgeClass = 'bg-warning text-dark';
+                                elseif($status == 'approved') $badgeClass = 'bg-primary';
+                                elseif($status == 'pending') $badgeClass = 'bg-info text-dark';
+                                ?>
+                                <span class="badge <?php echo $badgeClass; ?>">
+                                    <?php echo ucfirst($status); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <?php if($project['status'] == 'pending'): ?>
+                                    <form action="update_status.php" method="POST" class="d-flex gap-2 flex-wrap">
+                                        <input type="hidden" name="id" value="<?php echo $project['id']; ?>">
+                                        
+                                        <button type="submit" name="approve" value="approved" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check me-1"></i>Approve
+                                        </button>
+
+                                        <button type="submit" name="reject" value="rejected" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-times me-1"></i>Reject
+                                        </button>
                                     </form>
-                                </td>
-                            </tr>
-                            <?php endwhile;?>
-                        <?php else: ?>
-                            <tr><td colspan="7" class="text-center py-4 text-muted">No projects found.</td></tr>
-                        <?php endif;?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
+                                <?php elseif($project['status'] == 'approved'): ?>
+                                    <span class="badge bg-success">Already Approved</span>
+                                <?php elseif($project['status'] == 'rejected'): ?>
+                                    <span class="badge bg-danger">Already Rejected</span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary"><?php echo ucfirst($project['status']); ?></span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-3">No recent projects found.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
+  
 <script>
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
