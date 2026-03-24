@@ -19,11 +19,7 @@ if ($count_result) {
     }
 }
 
-// --------------------------
-// Fetch 2 most recent projects for admin quick actions
-// --------------------------
-$recent_projects_query = "SELECT * FROM projects ORDER BY created_at DESC LIMIT 10";
-$recent_projects_result = mysqli_query($conn, $recent_projects_query);
+
 // --------------------------
 // Fetch all projects for predictive analysis
 // --------------------------
@@ -546,75 +542,8 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
             </div>
         </div>
 
-        <!-- Recent Projects Management -->
-         <!-- Recent Projects Management -->
-<div class="panel mb-5">
-    <h5 class="section-title">Recent Projects Management</h5>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Project Name</th>
-                    <th>Certifications by CPDC<i class="fas fa-certificate" style="color: #22c55e;"></i></th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if($recent_projects_result && mysqli_num_rows($recent_projects_result) > 0): ?>
-                    <?php while($project = mysqli_fetch_assoc($recent_projects_result)): ?>
-                        <tr>
-                            <td>#<?php echo $project['id']; ?></td>
-                            <td><?php echo htmlspecialchars($project['title']); ?></td>
-                            <td>
-                                <?php 
-                                $status = $project['status'];
-                                $badgeClass = 'bg-secondary';
 
-                                if($status == 'done') $badgeClass = 'bg-success';
-                                elseif($status == 'rejected') $badgeClass = 'bg-danger';
-                                elseif($status == 'ongoing') $badgeClass = 'bg-warning text-dark';
-                                elseif($status == 'approved') $badgeClass = 'bg-primary';
-                                elseif($status == 'pending') $badgeClass = 'bg-info text-dark';
-                                ?>
-                                <span class="badge <?php echo $badgeClass; ?>">
-                                    <?php echo ucfirst($status); ?>
-                                </span>
-                            </td>
-                            <td>
-                                <?php if($project['status'] == 'pending'): ?>
-                                    <form action="update_status.php" method="POST" class="d-flex gap-2 flex-wrap">
-                                        <input type="hidden" name="id" value="<?php echo $project['id']; ?>">
-                                        
-                                        <button type="submit" name="approve" value="approved" class="btn btn-sm btn-success">
-                                            <i class="fas fa-check me-1"></i>Approve
-                                        </button>
 
-                                        <button type="submit" name="reject" value="rejected" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-times me-1"></i>Reject
-                                        </button>
-                                    </form>
-                                <?php elseif($project['status'] == 'approved'): ?>
-                                    <span class="badge bg-success">Already Approved</span>
-                                <?php elseif($project['status'] == 'rejected'): ?>
-                                    <span class="badge bg-danger">Already Rejected</span>
-                                <?php else: ?>
-                                    <span class="badge bg-secondary"><?php echo ucfirst($project['status']); ?></span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="4" class="text-center text-muted py-3">No recent projects found.</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-  
 <script>
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
