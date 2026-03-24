@@ -356,6 +356,7 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
 </head>
 <body>
 
+<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
 <div class="app-wrapper">
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
@@ -367,23 +368,21 @@ body{font-family:'Poppins', sans-serif;background:linear-gradient(135deg, #eef3f
 
         <div class="sidebar-menu">
             <div class="menu-label">Navigation</div>
-            <a href="admin_dashboard.php" class="active"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
-            
-            <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Site Inspection</span></a>
 
-            <a href="#"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
-            <a href="#"><i class="fas fa-hammer"></i><span class="nav-text">Supervision and Monitoring</span></a>
-            <a href="admin_history.php"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
-            <a href="#"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
+            <a href="admin_dashboard.php" class="active"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
+<a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Site Inspection</span></a>
+<a href="#"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
+<a href="#"><i class="fas fa-hammer"></i><span class="nav-text">Supervision and Monitoring</span></a>
+<a href="admin_history.php"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
+<a href="#"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
 
             <br>
             <div class="sidebar-footer">
                 <a href="login.php"><i class="fas fa-sign-out-alt"></i><span class="sidebar-footer-text">Logout</span></a>
             </div>
-        </div>  
+        </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="main-content" id="mainContent">
         <div class="topbar">
             <div class="topbar-left">

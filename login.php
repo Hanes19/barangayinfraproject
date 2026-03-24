@@ -17,14 +17,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "All fields are required.";
     } else {
 
-    $roles = [
+   $roles = [
     "rhealenepedrosa22@gmail.com" => "barangaycaptain",
     "godsentgracesalazar@gmail.com" => "secretary",
     "fheviealivio@gmail.com" => "collector",
     "courier@example.com" => "courier",
     "ponsecakathy@gmail.com" => "admin",
     "jyanson@aclcbukidnon.com" => "client",
-    "cpdc@gmail.com" => "cpdc" // <-- CPDC
+    "cpdc@gmail.com" => "cpdc", // <-- CPDC
+    "lnbpres@gmail.com" => "lnbpres",
 ];
 
 $role = $roles[$email] ?? "resident";
@@ -41,7 +42,8 @@ switch($role) {
     case "courier":         header("Location: CourierPage.php"); break;
     case "admin":           header("Location: admin_dashboard.php"); break;
     case "client":          header("Location: client_dashboard.php"); break;
-    case "cpdc":            header("Location: planning.php"); break; // CPDC redirect
+    case "cpdc":            header("Location: planning.php"); break;
+    case "lnbpres":         header("Location: lnbpres.php"); break;
     default:                header("Location: resident.php"); break;
 }
 exit();
