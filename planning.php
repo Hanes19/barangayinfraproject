@@ -127,16 +127,22 @@ h3 {
 
                         echo "<td><span class='badge bg-secondary'>{$status_badge}</span></td>";
                         
+
                         // Actions Column
                         echo "<td>
-                            <form action='update_status.php' method='POST' class='d-flex gap-2 flex-wrap'>
+                            <form action='update_status.php' method='POST' enctype='multipart/form-data' class='d-flex flex-column gap-2'>
                                 <input type='hidden' name='id' value='{$project['id']}'>
-                                <button type='submit' name='status' value='approved' class='btn btn-sm btn-approve'>
-                                    <i class='fas fa-check'></i> Approve
-                                </button>
-                                <button type='submit' name='status' value='rejected' class='btn btn-sm btn-reject' onclick='return confirm(\"Are you sure you want to reject this project?\");'>
-                                    <i class='fas fa-times'></i> Reject
-                                </button>
+                                
+                                <input type='file' name='signed_document' class='form-control form-control-sm' accept='.pdf,.doc,.docx,.jpg,.png' title='Upload signed document'>
+                                
+                                <div class='d-flex gap-2 flex-wrap'>
+                                    <button type='submit' name='status' value='approved' class='btn btn-sm btn-approve'>
+                                        <i class='fas fa-check'></i> Approve
+                                    </button>
+                                    <button type='submit' name='status' value='rejected' class='btn btn-sm btn-reject' onclick='return confirm(\"Are you sure you want to reject this project?\");'>
+                                        <i class='fas fa-times'></i> Reject
+                                    </button>
+                                </div>
                             </form>
                         </td>";
                         echo "</tr>";
