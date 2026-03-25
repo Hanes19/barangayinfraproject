@@ -211,7 +211,7 @@ body{
   <p>A Real-time Barangay Infrastructure Projects Dashboard and Analytics System.</p>
   <br>
 
-   <p>City Government of Valencia, Bukidnon.</p>
+   <p>City Government of Valencia</p>
    
    <br>
 
