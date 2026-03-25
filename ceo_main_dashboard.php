@@ -2,8 +2,9 @@
 session_start();
 include 'db.php';
 
-// CEO Main only sees projects transmitted to them that are NOT yet approved
-$projects_query = "SELECT * FROM projects WHERE ceo_status = 'transmitted' AND checking_status IN ('pending', 'declined') ORDER BY created_at DESC";
+// CEO Main only sees projects manually transmitted to them from the Admin
+// The CEO should only see projects that are actively 'pending'
+$projects_query = "SELECT * FROM projects WHERE ceo_status = 'transmitted' AND checking_status = 'pending' ORDER BY created_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 ?>
 
@@ -57,6 +58,7 @@ $projects_result = mysqli_query($conn, $projects_query);
                 </thead>
                 <tbody>
                     <?php
+                    // This is where line 60 was failing. It will work now because $projects_result is strictly defined at the top.
                     if($projects_result && mysqli_num_rows($projects_result) > 0) {
                         while($project = mysqli_fetch_assoc($projects_result)) {
                             $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : "#";
@@ -106,7 +108,7 @@ $projects_result = mysqli_query($conn, $projects_query);
                             echo "</tr>";
                         }
                     } else {
-                        echo "<tr><td colspan='6' class='text-center py-5 text-muted'><i class='fas fa-clipboard-check fs-2 mb-3 d-block text-light'></i>All clear! No projects pending your review.</td></tr>";
+                        echo "<tr><td colspan='6' class='text-center py-5 text-muted'><i class='fas fa-clipboard-check fs-2 mb-3 d-block text-secondary'></i>All clear! No projects pending your review.</td></tr>";
                     }
                     ?>
                 </tbody>

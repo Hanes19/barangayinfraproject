@@ -2,8 +2,9 @@
 session_start();
 include 'db.php';
 
-// Fetch only projects that have passed Planning and were transmitted
-$projects_query = "SELECT * FROM projects WHERE ceo_status = 'transmitted' ORDER BY created_at DESC";
+
+// Fetch projects that are in checking phase, but HIDE them once checking_status is 'approved'
+$projects_query = "SELECT * FROM projects WHERE ceo_status IN ('transmitted', 'approved') AND (checking_status != 'approved' OR checking_status IS NULL) ORDER BY created_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
 ?>
 
@@ -63,11 +64,10 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
             <div class="brand-text"><h4>Ato Ni! Barangay</h4></div>
         </div>
         <div class="sidebar-menu">
-            <div class="menu-label">Navigation</div>
             <a href="admin_dashboard.php"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
-            <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Inspection</span></a>
+            <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Site Inspection</span></a>
             <a href="admin_checking.php" class="active"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
-            <a href="admin_monitoring.php"><i class="fas fa-hard-hat"></i><span class="nav-text">Supervision & Monitoring</span></a>
+            <a href="admin_monitoring.php"><i class="fas fa-hammer"></i><span class="nav-text">Supervision and Monitoring</span></a>
             <a href="admin_history.php"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
             <a href="admin_completed.php"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
             <br>
@@ -84,7 +84,7 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
 
         <?php if(isset($_GET['msg']) && $_GET['msg'] == 'resubmitted'): ?>
             <div class="alert alert-primary alert-dismissible fade show" role="alert">
-                <i class="fas fa-paper-plane me-2"></i> Project successfully resubmitted to CEO Main (File replaced if provided).
+                <i class="fas fa-paper-plane me-2"></i> Project successfully transmitted to CEO Main.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php elseif(isset($_GET['msg']) && $_GET['msg'] == 'auto_approved'): ?>
@@ -112,76 +112,85 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                         if($projects_result && mysqli_num_rows($projects_result) > 0) {
                             while($project = mysqli_fetch_assoc($projects_result)) {
                                 $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : "#";
-                                $checking_status = isset($project['checking_status']) ? strtolower($project['checking_status']) : 'pending';
-                                $attempts = isset($project['submission_attempts']) ? intval($project['submission_attempts']) : 1;
-                                $ceo_remarks = !empty($project['ceo_main_remarks']) ? htmlspecialchars($project['ceo_main_remarks']) : 'None';
+                                $ceo_status = strtolower($project['ceo_status'] ?? 'pending');
+                                $checking_status = strtolower($project['checking_status'] ?? 'pending');
+                                $attempts = isset($project['submission_attempts']) ? intval($project['submission_attempts']) : 0;
+                                $ceo_remarks = !empty($project['ceo_remarks']) ? htmlspecialchars($project['ceo_remarks']) : 'Waiting for review...';
                                 
-                                // Unique form ID for linking the input across columns
-                                $form_id = "resubmit_form_" . $project['id'];
+                                // Determine if this is the first time the Admin is sending it to the CEO
+                                $is_first_submission = ($attempts == 0) ? 1 : 0;
                                 
-                                // Status Styling
-                                if ($checking_status == 'approved') {
-                                    $badge = "<span class='badge bg-success'><i class='fas fa-check-circle me-1'></i> Approved</span>";
+                                // Status Logic
+                                $statusBadge = "<span class='badge bg-warning text-dark'>Preparing Submission</span>";
+                                if ($ceo_status == 'transmitted' && $checking_status == 'pending') {
+                                    $statusBadge = "<span class='badge bg-info text-dark'>Under CEO Review</span>";
                                 } elseif ($checking_status == 'declined') {
-                                    $badge = "<span class='badge bg-danger'><i class='fas fa-times-circle me-1'></i> Declined</span>";
-                                } else {
-                                    $badge = "<span class='badge bg-warning text-dark'><i class='fas fa-hourglass-half me-1'></i> Pending Review</span>";
+                                    $statusBadge = "<span class='badge bg-danger'>Returned for Fixes</span>";
                                 }
 
                                 echo "<tr>";
                                 
-                                // Col 1: Project Name
+                                // Col 1: Name
                                 echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
-                                
-                                // Col 2: Document (View + Replace Button)
+
+                                // Col 2: Document Preview
                                 echo "<td>";
-                                echo "<a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary mb-1 w-100'><i class='fas fa-file-pdf'></i> View Doc</a>";
-                                
-                                if ($checking_status == 'declined') {
-                                    echo "<div class='mt-2 border-top pt-2'>";
-                                    echo "<small class='text-danger fw-bold d-block mb-1' style='font-size: 0.7rem;'><i class='fas fa-upload'></i> Replace File:</small>";
-                                    // Notice the form='$form_id' attribute below. This ties it to the resubmit button in Col 6!
-                                    echo "<input type='file' name='new_document' form='$form_id' class='form-control form-control-sm' accept='.pdf,.doc,.docx' title='Replace document'>";
-                                    echo "</div>";
+                                if ($doc_path != "#") {
+                                    echo "<a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary mb-1 w-100'><i class='fas fa-file-pdf'></i> View Current Doc</a>";
+                                } else {
+                                    echo "<span class='text-muted small'>No file uploaded</span>";
                                 }
                                 echo "</td>";
+
+                                // Col 3: Status Badge
+                                echo "<td>{$statusBadge}</td>";
                                 
-                                // Col 3 & 4: Status and Attempts
-                                echo "<td>$badge</td>";
+                                // Col 4: Attempts tracker
                                 echo "<td><span class='badge bg-secondary'>$attempts / 3</span></td>";
-                                
-                                // Col 5: Suggestions column
+
+                                // Col 5: CEO Suggestions / Feedback
                                 echo "<td>";
                                 if ($checking_status == 'declined') {
-                                    echo "<div class='suggestion-box'><i class='fas fa-exclamation-triangle me-1'></i> $ceo_remarks</div>";
+                                    echo "<div class='suggestion-box'><strong>Fixes Required:</strong><br>$ceo_remarks</div>";
                                 } else {
-                                    echo "<span class='text-muted small'>Waiting on review...</span>";
+                                    echo "<span class='text-muted small fst-italic'>$ceo_remarks</span>";
                                 }
                                 echo "</td>";
-                                
-                                // Col 6: Actions Column (Where the form actually lives)
+
+                                // Col 6: Form & Actions
                                 echo "<td>";
-                                if ($checking_status == 'approved') {
-                                    $date = date('M d, Y h:i A', strtotime($project['approved_at']));
-                                    echo "<span class='text-success fw-bold small'><i class='fas fa-flag-checkered me-1'></i> Finalized on $date</span>";
-                                } elseif ($checking_status == 'declined') {
-                                    $next_attempt = $attempts + 1;
-                                    // The main form wrapping the text area and submit button
-                                    echo "<form id='$form_id' action='update_admin_checking.php' method='POST' enctype='multipart/form-data' class='d-flex flex-column gap-2'>
-                                            <input type='hidden' name='id' value='{$project['id']}'>
-                                            <input type='hidden' name='current_attempts' value='$attempts'>
-                                            <textarea name='admin_notes' class='form-control form-control-sm' rows='2' placeholder='Type fixes made...' required></textarea>
-                                            <button type='submit' class='btn btn-sm btn-primary w-100'><i class='fas fa-redo me-1'></i> Resubmit (Try $next_attempt)</button>
-                                          </form>";
+                                // The Admin can only act if they haven't sent it yet, OR if it was sent back by the CEO.
+                                if ($ceo_status == 'approved' && ($checking_status == 'pending' || $checking_status == 'declined' || $attempts == 0)) {
+                                    
+                                    // Make a unique form ID
+                                    $form_id = "admin_form_" . $project['id'];
+                                    
+                                    echo "<form id='$form_id' action='update_admin_checking.php' method='POST' enctype='multipart/form-data'>";
+                                    echo "<input type='hidden' name='id' value='{$project['id']}'>";
+                                    echo "<input type='hidden' name='current_attempts' value='$attempts'>";
+                                    echo "<input type='hidden' name='is_first_submission' value='$is_first_submission'>";
+                                    
+                                    // Allow file upload to replace the bad document
+                                    echo "<div class='mb-2'>";
+                                    echo "<label class='small text-muted fw-bold'>Upload Revised Doc:</label>";
+                                    echo "<input type='file' name='new_document' class='form-control form-control-sm' accept='.pdf,.doc,.docx'>";
+                                    echo "</div>";
+                                    
+                                    echo "<textarea name='admin_notes' class='form-control form-control-sm mb-2' rows='1' placeholder='Notes for CEO...'></textarea>";
+                                    
+                                    $btn_text = ($attempts == 0) ? "Send to CEO" : "Resubmit Fixes";
+                                    echo "<button type='submit' class='btn btn-sm btn-success w-100'><i class='fas fa-paper-plane me-1'></i> $btn_text</button>";
+                                    echo "</form>";
+                                    
                                 } else {
-                                    echo "<span class='text-muted small'>No action needed.</span>";
+                                    echo "<button class='btn btn-sm btn-secondary w-100' disabled><i class='fas fa-lock me-1'></i> Locked (With CEO)</button>";
                                 }
                                 echo "</td>";
-                                
+
                                 echo "</tr>";
                             }
                         } else {
-                            echo "<tr><td colspan='6' class='text-center py-4 text-muted'>No projects in Checking & Review yet.</td></tr>";
+                            echo "<tr><td colspan='6' class='text-center py-5 text-muted'><i class='fas fa-clipboard-list fs-1 mb-3 text-light d-block'></i>No projects currently in checking phase.</td></tr>";
                         }
                         ?>
                     </tbody>

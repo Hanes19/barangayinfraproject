@@ -183,3 +183,245 @@ body {
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+<?php
+include 'db.php';
+
+// STATUS COUNTS
+$status_counts = ['pending'=>0,'approved'=>0,'ongoing'=>0,'done'=>0,'rejected'=>0];
+$total_projects = 0;
+
+$result = mysqli_query($conn, "SELECT status, COUNT(*) as count FROM projects GROUP BY status");
+while ($row = mysqli_fetch_assoc($result)) {
+    $status_counts[$row['status']] = $row['count'];
+    $total_projects += $row['count'];
+}
+
+// PROJECTS
+$projects_result = mysqli_query($conn, "SELECT * FROM projects ORDER BY id DESC");
+
+// BARANGAY
+$barangay_labels=[]; $barangay_data=[];
+$res = mysqli_query($conn,"SELECT location_barangay, COUNT(*) total FROM projects GROUP BY location_barangay");
+while($r=mysqli_fetch_assoc($res)){
+    $barangay_labels[]=$r['location_barangay'];
+    $barangay_data[]=$r['total'];
+}
+
+// LINE
+$date_labels=[]; $date_data=[];
+$res = mysqli_query($conn,"SELECT DATE(created_at) d, COUNT(*) t FROM projects GROUP BY d ORDER BY d");
+while($r=mysqli_fetch_assoc($res)){
+    $date_labels[]=$r['d'];
+    $date_data[]=$r['t'];
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+    background:url('musuan.jpg') no-repeat center/cover fixed;
+    font-family:'Segoe UI';
+}
+
+.card{border-radius:12px;}
+.card-header{background:#4caf50;color:#fff;}
+
+.status-badge{
+    padding:5px 8px;
+    border-radius:5px;
+    color:white;
+}
+.status-pending{background:#ffc107;color:black;}
+.status-approved{background:#0d6efd;}
+.status-ongoing{background:#17a2b8;}
+.status-done{background:#28a745;}
+.status-rejected{background:#dc3545;}
+
+canvas{max-height:300px;}
+
+/* 🔥 MOBILE TABLE TRANSFORM */
+@media(max-width:768px){
+
+table thead{display:none;}
+
+table, tbody, tr, td{
+    display:block;
+    width:100%;
+}
+
+tr{
+    margin-bottom:15px;
+    background:white;
+    border-radius:10px;
+    padding:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+td{
+    text-align:right;
+    padding-left:50%;
+    position:relative;
+}
+
+td::before{
+    position:absolute;
+    left:10px;
+    top:10px;
+    font-weight:bold;
+    text-align:left;
+}
+
+/* Labels */
+td:nth-child(1)::before{content:"#";}
+td:nth-child(2)::before{content:"Title";}
+td:nth-child(3)::before{content:"Budget";}
+td:nth-child(4)::before{content:"Status";}
+}
+
+/* spacing fix */
+.container{padding-bottom:50px;}
+</style>
+</head>
+
+<body>
+
+<div class="container mt-3">
+
+<!-- TABLE -->
+<div class="card mb-4">
+<div class="card-header">Projects</div>
+<div class="card-body">
+
+<table class="table table-hover">
+<thead>
+<tr>
+<th>#</th>
+<th>Title</th>
+<th>Budget</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+<?php $i=1; while($p=mysqli_fetch_assoc($projects_result)): ?>
+<tr>
+<td><?= $i++ ?></td>
+<td><?= $p['title'] ?></td>
+<td>₱<?= number_format($p['budget'],2) ?></td>
+<td><span class="status-badge status-<?= $p['status'] ?>">
+<?= ucfirst($p['status']) ?>
+</span></td>
+</tr>
+<?php endwhile; ?>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<!-- BAR -->
+<div class="card mb-4">
+<div class="card-header">Overview</div>
+<div class="card-body">
+<canvas id="barChart"></canvas>
+</div>
+</div>
+
+<!-- PIE + LINE -->
+<div class="row">
+<div class="col-md-6">
+<div class="card mb-4">
+<div class="card-header">Status</div>
+<div class="card-body">
+<canvas id="pieChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="card mb-4">
+<div class="card-header">Timeline</div>
+<div class="card-body">
+<canvas id="lineChart"></canvas>
+</div>
+</div>
+</div>
+</div>
+
+<!-- BARANGAY -->
+<div class="card mb-4">
+<div class="card-header">Barangay</div>
+<div class="card-body">
+<canvas id="barangayChart"></canvas>
+</div>
+</div>
+
+</div>
+
+<script>
+// BAR
+new Chart(barChart,{
+type:'bar',
+data:{labels:['Pending','Approved','Ongoing','Done','Rejected'],
+datasets:[{data:[
+<?= $status_counts['pending'] ?>,
+<?= $status_counts['approved'] ?>,
+<?= $status_counts['ongoing'] ?>,
+<?= $status_counts['done'] ?>,
+<?= $status_counts['rejected'] ?>
+]}]}
+});
+
+// PIE
+new Chart(pieChart,{
+type:'pie',
+data:{labels:['Pending','Approved','Ongoing','Done','Rejected'],
+datasets:[{data:[
+<?= $status_counts['pending'] ?>,
+<?= $status_counts['approved'] ?>,
+<?= $status_counts['ongoing'] ?>,
+<?= $status_counts['done'] ?>,
+<?= $status_counts['rejected'] ?>
+]}]}
+});
+
+// LINE
+new Chart(lineChart,{
+type:'line',
+data:{
+labels:<?= json_encode($date_labels) ?>,
+datasets:[{data:<?= json_encode($date_data) ?>}]
+}
+});
+
+// BARANGAY
+new Chart(barangayChart,{
+type:'bar',
+data:{
+labels:<?= json_encode($barangay_labels) ?>,
+datasets:[{data:<?= json_encode($barangay_data) ?>}]
+},
+options:{indexAxis:'y'}
+});
+</script>
+
+</body>
+</html>

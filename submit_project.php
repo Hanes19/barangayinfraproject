@@ -3,7 +3,6 @@ include 'db.php';
 $message = "";
 
 if (isset($_POST['submit_application'])) {
-    // PHP backend logic remains the same
     $type_of_request = mysqli_real_escape_string($conn, $_POST['type_of_request']);
     $title           = mysqli_real_escape_string($conn, $_POST['title']);
     $loc_barangay    = mysqli_real_escape_string($conn, $_POST['location_barangay']);
@@ -13,95 +12,112 @@ if (isset($_POST['submit_application'])) {
     $budget          = floatval($_POST['budget']);
     $description     = mysqli_real_escape_string($conn, $_POST['description']);
     
-    $date_today = date("F j, Y");
-    
-    // Generate Word document content (same)
-    $letter_content = "
-    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><title>Project Proposal</title></head>
-    <body style='font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.5;'>
-        <div style='text-align: center; margin-bottom: 30px;'>
-            <strong>Republic of the Philippines</strong><br>
-            Province of Bukidnon<br>
-            City of Valencia<br>
-            <strong>BARANGAY " . strtoupper($loc_barangay) . "</strong><br>
-            Office of the Punong Barangay
-        </div>
+    // --- FLAG FEATURE: Check for 3 or more pending/ongoing projects ---
+    // We count projects that are NOT completed, declined, rejected, or cancelled.
+    $check_query = "SELECT COUNT(*) as active_count FROM projects WHERE location_barangay = '$loc_barangay' AND status NOT IN ('completed', 'declined', 'rejected', 'cancelled')";
+    $check_result = mysqli_query($conn, $check_query);
+    $check_row = mysqli_fetch_assoc($check_result);
 
-        <p><strong>Date:</strong> $date_today</p>
-        
-        <p>
-            <strong>To the City Engineering Office / City Mayor's Office</strong><br>
-            Valencia City, Bukidnon
-        </p>
-
-        <p><strong>Subject:</strong> Formal Request for $type_of_request - $title</p>
-
-        <p>Dear Sir/Madam,</p>
-
-        <p>Greetings of peace!</p>
-
-        <p>We are respectfully submitting this formal proposal and request for a <strong>$type_of_request</strong> for our proposed project: <strong>\"$title\"</strong>.</p>
-
-        <p><strong>Project Details:</strong></p>
-        <ul>
-            <li><strong>Specific Location:</strong> $loc_details, Barangay $loc_barangay, Valencia City</li>
-            <li><strong>Proposed Budget:</strong> Php " . number_format($budget, 2) . "</li>
-            <li><strong>Intended Source of Fund:</strong> $source_of_fund</li>
-        </ul>
-
-        <p><strong>Project Description & Justification:</strong><br>
-        $description</p>
-
-        <p>We believe this project will greatly benefit our community. We are hoping for your favorable response and approval regarding this matter.</p>
-
-        <br><br>
-        <p>Respectfully yours,</p>
-        <br>
-        <p>
-            <strong>HON. " . strtoupper($punong_barangay) . "</strong><br>
-            Punong Barangay<br>
-            Barangay $loc_barangay
-        </p>
-    </body>
-    </html>";
-
-    $target_dir = "uploads/docs/";
-    $clean_title = preg_replace('/[^A-Za-z0-9\-]/', '_', $title);
-    $generated_file_name = time() . "_" . $clean_title . "_Proposal.doc";
-    
-    if (file_put_contents($target_dir . $generated_file_name, $letter_content)) {
-        $final_file_to_save = $generated_file_name; 
-
-        if (!empty($_FILES["attachment"]["name"])) {
-            $upload_name = time() . "_SUPPORTING_" . basename($_FILES["attachment"]["name"]);
-            if (move_uploaded_file($_FILES["attachment"]["tmp_name"], $target_dir . $upload_name)) {
-                $message .= "<div class='alert alert-info mb-1'>Supporting document uploaded.</div>";
-            }
-        }
-
-        $sql = "INSERT INTO projects (
-                    title, type_of_request, location_barangay, location_details, 
-                    source_of_fund, punong_barangay, budget, description, application_file, status
-                ) VALUES (
-                    '$title', '$type_of_request', '$loc_barangay', '$loc_details', 
-                    '$source_of_fund', '$punong_barangay', $budget, '$description', '$generated_file_name', 'pending'
-                )";
-        
-        if (mysqli_query($conn, $sql)) {
-            $message .= "<div class='alert alert-success'>
-                <strong>Success!</strong> Application submitted.<br>
-                A formal proposal document has been automatically generated and attached to this project.
-                <br><br>
-                <a href='uploads/docs/$generated_file_name' class='btn btn-sm btn-outline-success' download>
-                    Download Generated Word Document
-                </a>
-            </div>";
-        } else {
-            $message .= "<div class='alert alert-danger'>Database Error: " . mysqli_error($conn) . "</div>";
-        }
+    if ($check_row['active_count'] >= 3) {
+        // Flag the barangay and block submission
+        $message = "<div class='alert alert-danger shadow-sm border-danger border-2'>
+            <h5 class='text-danger fw-bold mb-2'><i class='fas fa-exclamation-triangle me-2'></i>Submission Blocked!</h5>
+            Barangay <strong>" . strtoupper($loc_barangay) . "</strong> currently has <strong>" . $check_row['active_count'] . " active/pending projects</strong> in the queue. 
+            <hr>
+            <p class='mb-0 small'>To maintain fair queueing and resource allocation, a barangay cannot exceed the limit of 3 ongoing projects. Please update and complete your current pending projects before submitting a new proposal.</p>
+        </div>";
     } else {
-        $message = "<div class='alert alert-danger'>Error generating document. Please check folder permissions for 'uploads/docs/'.</div>";
+        // PROCEED WITH SUBMISSION IF LIMIT IS NOT REACHED
+        $date_today = date("F j, Y");
+        
+        // Generate Word document content
+        $letter_content = "
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><title>Project Proposal</title></head>
+        <body style='font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.5;'>
+            <div style='text-align: center; margin-bottom: 30px;'>
+                <strong>Republic of the Philippines</strong><br>
+                Province of Bukidnon<br>
+                City of Valencia<br>
+                <strong>BARANGAY " . strtoupper($loc_barangay) . "</strong><br>
+                Office of the Punong Barangay
+            </div>
+
+            <p><strong>Date:</strong> $date_today</p>
+            
+            <p>
+                <strong>To the City Engineering Office / City Mayor's Office</strong><br>
+                Valencia City, Bukidnon
+            </p>
+
+            <p><strong>Subject:</strong> Formal Request for $type_of_request - $title</p>
+
+            <p>Dear Sir/Madam,</p>
+
+            <p>Greetings of peace!</p>
+
+            <p>We are respectfully submitting this formal proposal and request for a <strong>$type_of_request</strong> for our proposed project: <strong>\"$title\"</strong>.</p>
+
+            <p><strong>Project Details:</strong></p>
+            <ul>
+                <li><strong>Specific Location:</strong> $loc_details, Barangay $loc_barangay, Valencia City</li>
+                <li><strong>Proposed Budget:</strong> Php " . number_format($budget, 2) . "</li>
+                <li><strong>Intended Source of Fund:</strong> $source_of_fund</li>
+            </ul>
+
+            <p><strong>Project Description & Justification:</strong><br>
+            $description</p>
+
+            <p>We believe this project will greatly benefit our community. We are hoping for your favorable response and approval regarding this matter.</p>
+
+            <br><br>
+            <p>Respectfully yours,</p>
+            <br>
+            <p>
+                <strong>HON. " . strtoupper($punong_barangay) . "</strong><br>
+                Punong Barangay<br>
+                Barangay $loc_barangay
+            </p>
+        </body>
+        </html>";
+
+        $target_dir = "uploads/docs/";
+        $clean_title = preg_replace('/[^A-Za-z0-9\-]/', '_', $title);
+        $generated_file_name = time() . "_" . $clean_title . "_Proposal.doc";
+        
+        if (file_put_contents($target_dir . $generated_file_name, $letter_content)) {
+            $final_file_to_save = $generated_file_name; 
+
+            if (!empty($_FILES["attachment"]["name"])) {
+                $upload_name = time() . "_SUPPORTING_" . basename($_FILES["attachment"]["name"]);
+                if (move_uploaded_file($_FILES["attachment"]["tmp_name"], $target_dir . $upload_name)) {
+                    $message .= "<div class='alert alert-info mb-1'>Supporting document uploaded.</div>";
+                }
+            }
+
+            $sql = "INSERT INTO projects (
+                        title, type_of_request, location_barangay, location_details, 
+                        source_of_fund, punong_barangay, budget, description, application_file, status
+                    ) VALUES (
+                        '$title', '$type_of_request', '$loc_barangay', '$loc_details', 
+                        '$source_of_fund', '$punong_barangay', $budget, '$description', '$generated_file_name', 'pending'
+                    )";
+            
+            if (mysqli_query($conn, $sql)) {
+                $message .= "<div class='alert alert-success'>
+                    <strong>Success!</strong> Application submitted.<br>
+                    A formal proposal document has been automatically generated and attached to this project.
+                    <br><br>
+                    <a href='uploads/docs/$generated_file_name' class='btn btn-sm btn-outline-success' download>
+                        Download Generated Word Document
+                    </a>
+                </div>";
+            } else {
+                $message .= "<div class='alert alert-danger'>Database Error: " . mysqli_error($conn) . "</div>";
+            }
+        } else {
+            $message = "<div class='alert alert-danger'>Error generating document. Please check folder permissions for 'uploads/docs/'.</div>";
+        }
     }
 }
 ?>
@@ -113,6 +129,7 @@ if (isset($_POST['submit_application'])) {
     <title>Submit Project Application</title>
     <link rel="icon" type="image/png" href="cityengineerlogo.jpg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             background: url('Plaza.jpg') no-repeat center center fixed;
@@ -138,7 +155,7 @@ if (isset($_POST['submit_application'])) {
         label {
             color: #155724;
         }
-        .form-control:focus {
+        .form-control:focus, .form-select:focus {
             border-color: #28a745;
             box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
         }
@@ -160,6 +177,9 @@ if (isset($_POST['submit_application'])) {
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
+            <div class="mb-3">
+                <a href="client_dashboard.php" class="btn btn-light shadow-sm"><i class="fas fa-arrow-left me-2"></i>Back to Dashboard</a>
+            </div>
             <div class="card shadow-sm">
                 <div class="card-header text-center">
                     Submit New Project Proposal

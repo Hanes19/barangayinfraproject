@@ -2,9 +2,12 @@
 session_start();
 include 'db.php';
 
-
-$projects_query = "SELECT * FROM projects WHERE monitoring_status = 'inspection_requested' ORDER BY approved_at DESC";
+// Fetch ONLY projects that hit 100% completion
+$projects_query = "SELECT * FROM projects WHERE monitoring_status = 'completed' ORDER BY completed_at DESC";
 $projects_result = mysqli_query($conn, $projects_query);
+
+// Get the logged-in admin's name
+$admin_name = isset($_SESSION['full_name']) ? htmlspecialchars($_SESSION['full_name']) : 'Admin User';
 ?>
 
 <!DOCTYPE html>
@@ -12,14 +15,13 @@ $projects_result = mysqli_query($conn, $projects_query);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Supervision & Monitoring</title>
+<title>Completed Projects Archive</title>
 <link rel="icon" type="image/png" href="cityengineerlogo.jpg">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-/* Sidebar and Main Styles */
 :root{ --sidebar-width: 270px; --sidebar-collapsed-width: 88px; --green-dark: #0f3d22; --green-main: #14532d; --bg-main: #f4f7fb; --card-bg: rgba(255,255,255,0.95); --text-dark: #0f172a; --border-soft: rgba(148,163,184,0.16); --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08); }
 *{box-sizing:border-box;}
 body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--text-dark); margin:0; padding:0; overflow-x:hidden;}
@@ -39,9 +41,6 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
 .dashboard-title{margin:0; font-weight:700; color:#14532d; font-size:1.8rem;}
 .panel{ background: var(--card-bg); border:1px solid var(--border-soft); border-radius:18px; box-shadow:var(--shadow-soft); padding:20px; }
 .table thead th{background:#f8fafc !important; font-size:0.84rem; color:#475569; font-weight:700; border-bottom:1px solid #e2e8f0;}
-
-/* Info box styling */
-.data-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 0.85rem; }
 </style>
 </head>
 <body>
@@ -56,9 +55,9 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
             <a href="admin_dashboard.php"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
             <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Inspection</span></a>
             <a href="admin_checking.php"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
-            <a href="admin_monitoring.php" class="active"><i class="fas fa-hard-hat"></i><span class="nav-text">Supervision & Monitoring</span></a>
+            <a href="admin_monitoring.php"><i class="fas fa-hard-hat"></i><span class="nav-text">Supervision & Monitoring</span></a>
             <a href="admin_history.php"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
-            <a href="admin_completed.php"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
+            <a href="admin_completed.php" class="active"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
             <br>
             <div class="sidebar-footer">
                 <a href="login.php"><i class="fas fa-sign-out-alt"></i><span class="sidebar-footer-text">Logout</span></a>
@@ -68,70 +67,49 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
 
     <main class="main-content" id="mainContent">
         <div class="topbar">
-            <div><h2 class="dashboard-title">Supervision & Inspection Review</h2></div>
+            <div><h2 class="dashboard-title text-success"><i class="fas fa-award me-2"></i>Completed Projects Archive</h2></div>
         </div>
 
-        <?php if(isset($_GET['msg']) && $_GET['msg'] == 'completed'): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-trophy me-2"></i> Project verified and marked as 100% Complete! Moved to Completed Projects.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-
-        <div class="panel">
+        <div class="panel border-success border-top border-4">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
+                            <th width="15%">Handled By (Admin)</th>
                             <th width="20%">Project Name</th>
-                            <th width="15%">Type</th>
-                            <th width="15%">Finished Image</th>
-                            <th width="35%">Inspection Details (Spend & Timeline)</th>
-                            <th width="15%">Action</th>
+                            <th width="15%">Location</th>
+                            <th width="30%">Project Timeline (Start - End)</th>
+                            <th width="20%">Documentation</th>
                         </tr>
                     </thead>
-<tbody>
+                    <tbody>
                         <?php
                         if($projects_result && mysqli_num_rows($projects_result) > 0) {
                             while($project = mysqli_fetch_assoc($projects_result)) {
-                                $type = !empty($project['implementation_type']) ? htmlspecialchars(ucfirst($project['implementation_type'])) : 'Pending';
-                                $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecialchars($project['inspection_image']) : "#";
-                                $spend = !empty($project['spend_amount']) ? htmlspecialchars($project['spend_amount']) : 'N/A';
-                                $timeline = !empty($project['program_timeline']) ? nl2br(htmlspecialchars($project['program_timeline'])) : 'N/A';
+                                $location = !empty($project['location']) ? htmlspecialchars($project['location']) : 'Not Specified';
+                                
+                                // Format the exact timestamps
+                                $date_started = $project['approved_at'] ? date('M d, Y', strtotime($project['approved_at'])) : 'N/A';
+                                $date_ended = $project['completed_at'] ? date('M d, Y', strtotime($project['completed_at'])) : 'N/A';
 
                                 echo "<tr>";
-                                echo "<form action='update_admin_monitoring.php' method='POST'>";
-                                echo "<input type='hidden' name='id' value='{$project['id']}'>";
-
-                                // Name & Type
+                                echo "<td><small class='text-muted'><i class='fas fa-user-shield me-1'></i> $admin_name</small></td>";
                                 echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
-                                echo "<td><span class='badge bg-secondary px-2 py-1'><i class='fas fa-tag me-1'></i> $type</span></td>";
-
-                                // Image
-                                echo "<td><a href='$img_path' target='_blank' class='btn btn-sm btn-outline-info w-100'><i class='fas fa-image me-1'></i> View Photo</a></td>";
-
-                                // Details
-                                echo "<td>";
-                                if (strtolower($project['implementation_type']) == 'contract') {
-                                    echo "<div class='data-box'>";
-                                    echo "<strong class='text-dark d-block mb-1'><i class='fas fa-coins text-warning me-1'></i> Spend: ₱$spend</strong>";
-                                    echo "<span class='text-muted'><strong>Timeline:</strong> $timeline</span>";
-                                    echo "</div>";
-                                } else {
-                                    echo "<span class='text-muted small'><i class='fas fa-info-circle me-1'></i> By Administration. Image verification only.</span>";
-                                }
-                                echo "</td>";
-
-                                // Action Button
+                                echo "<td><i class='fas fa-map-marker-alt text-danger me-1'></i> $location</td>";
+                                
                                 echo "<td>
-                                        <button type='submit' name='action' value='complete' class='btn btn-sm btn-success w-100 mb-1' onclick='return confirm(\"Are you sure you want to finalize this project? It will be moved to Completed.\");'><i class='fas fa-check-double me-1'></i> Verify & Complete</button>
+                                        <div class='d-flex align-items-center gap-2'>
+                                            <span class='badge bg-light text-dark border'><i class='fas fa-play text-primary me-1'></i> $date_started</span>
+                                            <i class='fas fa-arrow-right text-muted'></i>
+                                            <span class='badge bg-light text-dark border'><i class='fas fa-stop text-success me-1'></i> $date_ended</span>
+                                        </div>
                                       </td>";
-
-                                echo "</form>";
+                                      
+                                echo "<td><a href='admin_project_documentation.php?id={$project['id']}' class='btn btn-sm btn-success w-100'><i class='fas fa-folder-open me-1'></i> View Full Report</a></td>";
                                 echo "</tr>";
                             }
                         } else {
-                            echo "<tr><td colspan='5' class='text-center py-5 text-muted'><i class='fas fa-clipboard-list fs-1 mb-3 text-light d-block'></i>No inspection requests pending review.</td></tr>";
+                            echo "<tr><td colspan='5' class='text-center py-5 text-muted'><i class='fas fa-folder-open mb-3 fs-1 text-light'></i><br>No completed projects yet.</td></tr>";
                         }
                         ?>
                     </tbody>
