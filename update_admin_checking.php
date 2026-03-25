@@ -52,7 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             // STANDARD RESUBMISSION
-            $update_query = "UPDATE projects SET checking_status = 'pending', submission_attempts = $new_attempts $file_update_query WHERE id = $id";
+            // FIX: Added `ceo_status = 'transmitted'` here so it reappears in the CEO queue!
+            $update_query = "UPDATE projects SET ceo_status = 'transmitted', checking_status = 'pending', submission_attempts = $new_attempts $file_update_query WHERE id = $id";
             mysqli_query($conn, $update_query);
 
             $log_details = "Admin resubmitted project to CEO Main (Attempt $new_attempts/3). Admin notes: $admin_notes";

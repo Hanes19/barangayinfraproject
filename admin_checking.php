@@ -64,9 +64,9 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
             <div class="brand-text"><h4>Ato Ni! Barangay</h4></div>
         </div>
         <div class="sidebar-menu">
-            <a href="admin_dashboard.php" class="active"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
+            <a href="admin_dashboard.php"><i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span></a>
             <a href="admin_planning.php"><i class="fas fa-clipboard-list"></i><span class="nav-text">Planning & Site Inspection</span></a>
-            <a href="admin_checking.php"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
+            <a href="admin_checking.php" class="active"><i class="fas fa-list-check"></i><span class="nav-text">Checking & Review</span></a>
             <a href="admin_monitoring.php"><i class="fas fa-hammer"></i><span class="nav-text">Supervision and Monitoring</span></a>
             <a href="admin_history.php"><i class="fas fa-clock-rotate-left"></i><span class="nav-text">History</span></a>
             <a href="admin_completed.php"><i class="fas fa-check-double"></i><span class="nav-text">Completed</span></a>
@@ -84,7 +84,7 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
 
         <?php if(isset($_GET['msg']) && $_GET['msg'] == 'resubmitted'): ?>
             <div class="alert alert-primary alert-dismissible fade show" role="alert">
-                <i class="fas fa-paper-plane me-2"></i> Project successfully resubmitted to CEO Main (File replaced if provided).
+                <i class="fas fa-paper-plane me-2"></i> Project successfully transmitted to CEO Main.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php elseif(isset($_GET['msg']) && $_GET['msg'] == 'auto_approved'): ?>
@@ -107,65 +107,90 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                             <th width="20%">Admin Actions</th>
                         </tr>
                     </thead>
-<tbody>
+                    <tbody>
                         <?php
                         if($projects_result && mysqli_num_rows($projects_result) > 0) {
                             while($project = mysqli_fetch_assoc($projects_result)) {
-                                $type = !empty($project['implementation_type']) ? htmlspecialchars(ucfirst($project['implementation_type'])) : 'Pending';
-                                $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecialchars($project['inspection_image']) : "#";
-                                $spend = !empty($project['spend_amount']) ? htmlspecialchars($project['spend_amount']) : 'N/A';
-                                $timeline = !empty($project['program_timeline']) ? nl2br(htmlspecialchars($project['program_timeline'])) : 'N/A';
-                                $monitoring_status = isset($project['monitoring_status']) ? $project['monitoring_status'] : 'pending';
+                                $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : "#";
+                                $ceo_status = strtolower($project['ceo_status'] ?? 'pending');
+                                $checking_status = strtolower($project['checking_status'] ?? 'pending');
+                                $attempts = isset($project['submission_attempts']) ? intval($project['submission_attempts']) : 0;
+                                $ceo_remarks = !empty($project['ceo_remarks']) ? htmlspecialchars($project['ceo_remarks']) : 'Waiting for review...';
+                                
+                                // Determine if this is the first time the Admin is sending it to the CEO
+                                $is_first_submission = ($attempts == 0) ? 1 : 0;
+                                
+                                // Status Logic
+                                $statusBadge = "<span class='badge bg-warning text-dark'>Preparing Submission</span>";
+                                if ($ceo_status == 'transmitted' && $checking_status == 'pending') {
+                                    $statusBadge = "<span class='badge bg-info text-dark'>Under CEO Review</span>";
+                                } elseif ($checking_status == 'declined') {
+                                    $statusBadge = "<span class='badge bg-danger'>Returned for Fixes</span>";
+                                }
 
                                 echo "<tr>";
-                                echo "<form action='update_admin_monitoring.php' method='POST'>";
-                                echo "<input type='hidden' name='id' value='{$project['id']}'>";
-
+                                
                                 // Col 1: Name
                                 echo "<td><strong>" . htmlspecialchars($project['title']) . "</strong></td>";
 
-                                // Col 2: Type
-                                echo "<td><span class='badge bg-secondary px-2 py-1'><i class='fas fa-tag me-1'></i> $type</span></td>";
-
-                                // Col 3: Finished Image
+                                // Col 2: Document Preview
                                 echo "<td>";
-                                if (!empty($project['inspection_image'])) {
-                                    echo "<a href='$img_path' target='_blank' class='btn btn-sm btn-outline-info w-100'><i class='fas fa-image me-1'></i> View Photo</a>";
+                                if ($doc_path != "#") {
+                                    echo "<a href='$doc_path' target='_blank' class='btn btn-sm btn-outline-primary mb-1 w-100'><i class='fas fa-file-pdf'></i> View Current Doc</a>";
                                 } else {
-                                    echo "<span class='text-muted small'><i class='fas fa-clock me-1'></i> Waiting for upload</span>";
+                                    echo "<span class='text-muted small'>No file uploaded</span>";
                                 }
                                 echo "</td>";
 
-                                // Col 4: Inspection Details
+                                // Col 3: Status Badge
+                                echo "<td>{$statusBadge}</td>";
+                                
+                                // Col 4: Attempts tracker
+                                echo "<td><span class='badge bg-secondary'>$attempts / 3</span></td>";
+
+                                // Col 5: CEO Suggestions / Feedback
                                 echo "<td>";
-                                if ($monitoring_status == 'inspection_requested') {
-                                    if (strtolower($project['implementation_type']) == 'contract') {
-                                        echo "<div class='data-box'>";
-                                        echo "<strong class='text-dark d-block mb-1'><i class='fas fa-coins text-warning me-1'></i> Spend: $spend</strong>";
-                                        echo "<span class='text-muted'><strong>Timeline:</strong> $timeline</span>";
-                                        echo "</div>";
-                                    } else {
-                                        echo "<span class='text-muted small'><i class='fas fa-info-circle me-1'></i> By Administration. Image verification only.</span>";
-                                    }
+                                if ($checking_status == 'declined') {
+                                    echo "<div class='suggestion-box'><strong>Fixes Required:</strong><br>$ceo_remarks</div>";
                                 } else {
-                                    echo "<span class='text-warning fw-bold small'><i class='fas fa-spinner fa-spin me-1'></i> Pending Barangay Inspection Form</span>";
+                                    echo "<span class='text-muted small fst-italic'>$ceo_remarks</span>";
                                 }
                                 echo "</td>";
 
-                                // Col 5: Action (Disabled until Barangay submits the form)
+                                // Col 6: Form & Actions
                                 echo "<td>";
-                                if ($monitoring_status == 'inspection_requested') {
-                                    echo "<button type='submit' name='action' value='complete' class='btn btn-sm btn-success w-100 mb-1' onclick='return confirm(\"Are you sure you want to finalize this project? It will be moved to Completed.\");'><i class='fas fa-check-double me-1'></i> Verify & Complete</button>";
+                                // The Admin can only act if they haven't sent it yet, OR if it was sent back by the CEO.
+                                if ($ceo_status == 'approved' && ($checking_status == 'pending' || $checking_status == 'declined' || $attempts == 0)) {
+                                    
+                                    // Make a unique form ID
+                                    $form_id = "admin_form_" . $project['id'];
+                                    
+                                    echo "<form id='$form_id' action='update_admin_checking.php' method='POST' enctype='multipart/form-data'>";
+                                    echo "<input type='hidden' name='id' value='{$project['id']}'>";
+                                    echo "<input type='hidden' name='current_attempts' value='$attempts'>";
+                                    echo "<input type='hidden' name='is_first_submission' value='$is_first_submission'>";
+                                    
+                                    // Allow file upload to replace the bad document
+                                    echo "<div class='mb-2'>";
+                                    echo "<label class='small text-muted fw-bold'>Upload Revised Doc:</label>";
+                                    echo "<input type='file' name='new_document' class='form-control form-control-sm' accept='.pdf,.doc,.docx'>";
+                                    echo "</div>";
+                                    
+                                    echo "<textarea name='admin_notes' class='form-control form-control-sm mb-2' rows='1' placeholder='Notes for CEO...'></textarea>";
+                                    
+                                    $btn_text = ($attempts == 0) ? "Send to CEO" : "Resubmit Fixes";
+                                    echo "<button type='submit' class='btn btn-sm btn-success w-100'><i class='fas fa-paper-plane me-1'></i> $btn_text</button>";
+                                    echo "</form>";
+                                    
                                 } else {
-                                    echo "<button type='button' class='btn btn-sm btn-secondary w-100 mb-1' disabled title='Waiting for Barangay to submit inspection data'><i class='fas fa-ban me-1'></i> Verify & Complete</button>";
+                                    echo "<button class='btn btn-sm btn-secondary w-100' disabled><i class='fas fa-lock me-1'></i> Locked (With CEO)</button>";
                                 }
                                 echo "</td>";
 
-                                echo "</form>";
                                 echo "</tr>";
                             }
                         } else {
-                            echo "<tr><td colspan='5' class='text-center py-5 text-muted'><i class='fas fa-clipboard-list fs-1 mb-3 text-light d-block'></i>No inspection requests pending review.</td></tr>";
+                            echo "<tr><td colspan='6' class='text-center py-5 text-muted'><i class='fas fa-clipboard-list fs-1 mb-3 text-light d-block'></i>No projects currently in checking phase.</td></tr>";
                         }
                         ?>
                     </tbody>

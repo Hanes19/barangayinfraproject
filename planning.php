@@ -4,7 +4,7 @@ include 'db.php';
 
 // Check if user is CPDC (you can add your own check here)
 
-// Fetch 2 latest projects
+// Fetch latest projects
 $recent_projects_query = "SELECT * FROM projects ORDER BY created_at DESC LIMIT 10";
 $recent_projects_result = mysqli_query($conn, $recent_projects_query);
 ?>
@@ -20,7 +20,7 @@ $recent_projects_result = mysqli_query($conn, $recent_projects_query);
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
 body { 
-    background: url('CityHall.jpg') no-repeat center center fixed; /* <-- Replace 'background.jpg' with your image path */
+    background: url('CityHall.jpg') no-repeat center center fixed; 
     background-size: cover;
     font-family: Arial, sans-serif; 
 }
@@ -49,9 +49,17 @@ h3 {
 .btn-reject:hover { 
     background-color: #b91c1c; 
 }
+.btn-view {
+    background-color: #0ea5e9;
+    color: white;
+}
+.btn-view:hover {
+    background-color: #0284c7;
+    color: white;
+}
 /* Optional: add semi-transparent background to table for readability */
 .table-responsive {
-    background-color: rgba(255, 255, 255, 0.85); 
+    background-color: rgba(255, 255, 255, 0.90); 
     padding: 15px;
     border-radius: 10px;
 }
@@ -62,7 +70,7 @@ h3 {
 }
 
 .heading-container {
-    background-color: rgba(0, 0, 0, 0.5); /* semi-transparent black */
+    background-color: rgba(0, 0, 0, 0.6); /* semi-transparent black */
     display: inline-block; /* shrink to fit the heading */
     padding: 10px 20px;
     border-radius: 8px;
@@ -80,13 +88,14 @@ h3 {
 <div class="container mt-5">
   <div class="heading-container">
     <h3>Recent Projects Management (CPDC View)</h3>
-</div>
+  </div>
     <div class="table-responsive mt-3">
         <table class="table table-hover align-middle">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Project Name</th>
+                    <th>Document</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -95,17 +104,37 @@ h3 {
                 <?php
                 if($recent_projects_result && mysqli_num_rows($recent_projects_result) > 0) {
                     while($project = mysqli_fetch_assoc($recent_projects_result)) {
+                        
+                        // Check if a document is uploaded
+                        $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : "";
+                        $status_badge = htmlspecialchars($project['status']);
+                        
                         echo "<tr>";
-                        echo "<td>{$project['id']}</td>";
-                        echo "<td>{$project['title']}</td>";
-                        echo "<td>{$project['status']}</td>";
+                        echo "<td><strong>{$project['id']}</strong></td>";
+                        echo "<td>" . htmlspecialchars($project['title']) . "</td>";
+                        
+                        // Document Preview/Download Column
+                        echo "<td>";
+                        if ($doc_path) {
+                            // Opens the file in a new tab for preview/download
+                            echo "<a href='{$doc_path}' target='_blank' class='btn btn-sm btn-view'>
+                                    <i class='fas fa-file-pdf me-1'></i> View File
+                                  </a>";
+                        } else {
+                            echo "<span class='text-muted small'><i class='fas fa-times-circle'></i> No File</span>";
+                        }
+                        echo "</td>";
+
+                        echo "<td><span class='badge bg-secondary'>{$status_badge}</span></td>";
+                        
+                        // Actions Column
                         echo "<td>
                             <form action='update_status.php' method='POST' class='d-flex gap-2 flex-wrap'>
                                 <input type='hidden' name='id' value='{$project['id']}'>
                                 <button type='submit' name='status' value='approved' class='btn btn-sm btn-approve'>
                                     <i class='fas fa-check'></i> Approve
                                 </button>
-                                <button type='submit' name='status' value='rejected' class='btn btn-sm btn-reject'>
+                                <button type='submit' name='status' value='rejected' class='btn btn-sm btn-reject' onclick='return confirm(\"Are you sure you want to reject this project?\");'>
                                     <i class='fas fa-times'></i> Reject
                                 </button>
                             </form>
@@ -113,7 +142,7 @@ h3 {
                         echo "</tr>";
                     }
                 } else {
-                    echo "<tr><td colspan='4' class='text-center'>No projects found.</td></tr>";
+                    echo "<tr><td colspan='5' class='text-center py-4'>No projects found.</td></tr>";
                 }
                 ?>
             </tbody>
