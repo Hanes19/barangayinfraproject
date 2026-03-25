@@ -165,6 +165,11 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                 <i class="fas fa-paper-plane me-2"></i> Project successfully transmitted to the Main Office.
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+        <?php elseif(isset($_GET['msg']) && $_GET['msg'] == 'cpdc_error'): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i> <strong>Action Blocked:</strong> You cannot approve this project because the CPDC Certification is not yet approved.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         <?php endif; ?>
 
         <div class="panel">
@@ -293,6 +298,8 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     const sidebar = document.getElementById('sidebar');
     const sidebarHeader = document.getElementById('sidebarHeader');
@@ -304,6 +311,22 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
             mainContent.classList.toggle('expanded');
         });
     }
+
+    // --- NEW: Trigger Popup if URL has msg=cpdc_error ---
+    <?php if(isset($_GET['msg']) && $_GET['msg'] == 'cpdc_error'): ?>
+    document.addEventListener("DOMContentLoaded", function() {
+        Swal.fire({
+            icon: 'error',
+            title: 'Action Denied',
+            text: 'You cannot mark this as Approved. The CPDC Certification must be approved first!',
+            confirmButtonColor: '#14532d', // Matches your theme green
+            confirmButtonText: 'Understood'
+        }).then((result) => {
+            // Optional: Clean up the URL so the popup doesn't show again on refresh
+            window.history.replaceState(null, null, window.location.pathname);
+        });
+    });
+    <?php endif; ?>
 </script>
 </body>
 </html>
