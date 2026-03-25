@@ -106,7 +106,6 @@ body{
 .logo-front img,.logo-back img{
   width:115px;height:115px;
   border-radius:50%;object-fit:cover;
-  border:2px solid white;
   box-shadow:0 4px 12px rgba(0,0,0,.25);
 }
 .logo-back{transform:rotateY(180deg);}
@@ -185,7 +184,7 @@ body{
   <div class="logo-flip">
     <div class="logo-inner" id="logoInner">
       <div class="logo-front">
-        <img src="cityengineerlogo.jpg" alt="Barangay Dologon Logo">
+        <img src="engineeringofficelogo.jpeg" alt="Barangay Dologon Logo">
       </div>
       <div class="logo-back">
         <img src="valcitylogo.jpg" alt="Maramag Logo">
