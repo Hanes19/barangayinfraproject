@@ -160,7 +160,8 @@ body{font-family:'Poppins', sans-serif;background:var(--bg-main);color:var(--tex
                                 // Col 6: Form & Actions
                                 echo "<td>";
                                 // The Admin can only act if they haven't sent it yet, OR if it was sent back by the CEO.
-                                if ($ceo_status == 'approved' && ($checking_status == 'pending' || $checking_status == 'declined' || $attempts == 0)) {
+                                
+                                if ($checking_status == 'declined' || ($ceo_status == 'approved' && $checking_status == 'pending') || $attempts == 0) {
                                     
                                     // Make a unique form ID
                                     $form_id = "admin_form_" . $project['id'];
