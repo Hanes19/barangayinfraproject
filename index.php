@@ -171,6 +171,17 @@ body{
   .hero{padding:40px 24px 30px;}
   .welcome-title{font-size:26px;}
 }
+
+#cornerImage {
+  position: fixed;
+  bottom: 10px;   /* gap gikan sa ubos */
+  right: 10px;    /* gap gikan sa right */
+  width: 100px;   /* adjust size */
+  height: auto;
+  z-index: 9999;  /* para ibabaw sa tanan */
+  opacity: 0.9;   /* optional */
+}
+
 </style>
 </head>
 <body>
@@ -291,5 +302,6 @@ const logoInner = document.getElementById('logoInner');
 setInterval(() => logoInner.classList.toggle('show-back'), 2000);
 </script>
 
+<img src="QR.png" id="cornerImage">
 </body>
 </html>
