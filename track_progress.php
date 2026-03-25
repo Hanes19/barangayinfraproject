@@ -118,36 +118,67 @@ body {
         <p><strong>Budget:</strong> ₱<?php echo number_format($project['budget'], 2); ?></p>
 
         <h5 class="mt-4 mb-3">Project Progress</h5>
-        <ul class="timeline">
-            <?php
-            $status_order = ['pending','approved','ongoing','done','rejected'];
-            foreach($status_order as $stage){
-                $completed = '';
-                if($stage == 'rejected' && $current_status == 'rejected'){
-                    $completed = 'completed';
-                } elseif(array_search($stage, $status_order) <= array_search($current_status, $status_order) && $current_status != 'rejected'){
-                    $completed = 'completed';
-                }
-                echo '<li class="'.$completed.'"><span class="stage-name">'.ucfirst($stages[$stage]).'</span></li>';
-            }
-            ?>
-        </ul>
+<ul class="timeline">
+    <?php
+    $status_order = ['pending','approved','waiting','preparing','review','released'];
 
-        <div class="mt-4">
-            <strong>Current Status:</strong> 
-            <span class="badge <?php 
-                switch($current_status){
-                    case 'pending': echo 'bg-warning text-dark'; break;
-                    case 'approved': echo 'bg-primary'; break;
-                    case 'ongoing': echo 'bg-info text-dark'; break;
-                    case 'done': echo 'bg-success'; break;
-                    case 'rejected': echo 'bg-danger'; break;
-                }
-            ?>">
-                <?php echo ucfirst($current_status); ?>
-            </span>
-        </div>
-    </div>
+    foreach($status_order as $stage){
+        $completed = '';
+
+        // Handle cancelled
+        if($current_status == 'cancelled'){
+            if($stage == 'pending'){ 
+                $completed = 'completed'; 
+            }
+        } 
+        // Normal flow
+        elseif(array_search($stage, $status_order) <= array_search($current_status, $status_order)){
+            $completed = 'completed';
+        }
+
+        echo '<li class="'.$completed.'"><span class="stage-name">';
+
+        switch($stage){
+            case 'pending': echo 'Barangay Request'; break;
+            case 'approved': echo 'CPDC Approved'; break;
+            case 'waiting': echo 'LnB Approved'; break; // 🔥 NEW
+            case 'preparing': echo 'Preparation of DED and POW'; break;
+            case 'review': echo 'Checking and Review by CEO Main'; break;
+            case 'released': echo 'Approved Document for Release to Barangay'; break;
+        }
+
+        echo '</span></li>';
+    }
+    ?>
+</ul>
+
+     <div class="mt-4">
+    <strong>Current Status:</strong> 
+    <span class="badge <?php 
+        switch($current_status){
+            case 'pending': echo 'bg-warning text-dark'; break;
+            case 'approved': echo 'bg-primary'; break;
+            case 'waiting': echo 'bg-dark text-light'; break;
+            case 'preparing': echo 'bg-info text-dark'; break;
+            case 'review': echo 'bg-secondary'; break;
+            case 'released': echo 'bg-success'; break;
+            case 'cancelled': echo 'bg-danger'; break;
+            default: echo 'bg-dark';
+        }
+    ?>">
+        <?php 
+        switch($current_status){
+            case 'pending': echo 'Pending (Barangay Request)'; break;
+            case 'approved': echo 'Approved (CPDC Approved)'; break;
+            case 'waiting': echo 'LNB'; break;
+            case 'preparing': echo 'Preparation of DED and POW'; break;
+            case 'review': echo 'Checking by CEO Main'; break;
+            case 'released': echo 'Approved Document for Release to Barangay'; break;
+            case 'cancelled': echo 'Cancelled Request'; break;
+            default: echo ucfirst($current_status);
+        }
+        ?>
+    </span>
 </div>
 
 </body>
