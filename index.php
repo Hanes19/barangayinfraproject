@@ -106,7 +106,6 @@ body{
 .logo-front img,.logo-back img{
   width:115px;height:115px;
   border-radius:50%;object-fit:cover;
-  border:2px solid white;
   box-shadow:0 4px 12px rgba(0,0,0,.25);
 }
 .logo-back{transform:rotateY(180deg);}
@@ -172,6 +171,17 @@ body{
   .hero{padding:40px 24px 30px;}
   .welcome-title{font-size:26px;}
 }
+
+#cornerImage {
+  position: fixed;
+  bottom: 10px;   /* gap gikan sa ubos */
+  right: 10px;    /* gap gikan sa right */
+  width: 100px;   /* adjust size */
+  height: auto;
+  z-index: 9999;  /* para ibabaw sa tanan */
+  opacity: 0.9;   /* optional */
+}
+
 </style>
 </head>
 <body>
@@ -185,7 +195,7 @@ body{
   <div class="logo-flip">
     <div class="logo-inner" id="logoInner">
       <div class="logo-front">
-        <img src="cityengineerlogo.jpg" alt="Barangay Dologon Logo">
+        <img src="engineeringofficelogo.jpeg" alt="Barangay Dologon Logo">
       </div>
       <div class="logo-back">
         <img src="valcitylogo.jpg" alt="Maramag Logo">
@@ -201,7 +211,7 @@ body{
   <p>A Real-time Barangay Infrastructure Projects Dashboard and Analytics System.</p>
   <br>
 
-   <p>City Government of Valencia, Bukidnon.</p>
+   <p>City Government of Valencia</p>
    
    <br>
 
@@ -268,7 +278,7 @@ body{
     <h2>Contact Support</h2>
     <p>For technical concerns and inquiries regarding Ato ni! Barangay Projects Portal:</p>
     <p><strong>Email Support:</strong><br>support@atoni!barangayprojectsportal.gov.ph</p>
-    <p><strong>Technical Hotline:</strong><br>09267979552</p>
+    <p><strong>Technical Hotline:</strong><br>09067896101</p>
     <p><strong>Office Address:</strong><br>
       City Government of Valencia<br> Bukidnon (8709)<br>Philippines</p>
   </div>
@@ -292,5 +302,6 @@ const logoInner = document.getElementById('logoInner');
 setInterval(() => logoInner.classList.toggle('show-back'), 2000);
 </script>
 
+<img src="QR.png" id="cornerImage">
 </body>
 </html>

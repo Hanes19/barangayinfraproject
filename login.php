@@ -451,7 +451,7 @@ body {
 
     <div class="left">
         <div class="logo-wrap">
-            <img src="cityengineerlogo.jpg" alt="Barangay Logo">
+            <img src="engineeringofficelogo.jpeg" alt="Barangay Logo">
         </div>
         <div class="left-text">
             <h1 class="portal-title">
