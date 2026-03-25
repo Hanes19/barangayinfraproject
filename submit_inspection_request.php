@@ -121,7 +121,10 @@ if (!$project) { die("Project not found."); }
                         <div class="mb-4">
                             <label for="inspection_image" class="form-label">Upload Finished Project Image</label>
                             <input type="file" name="inspection_image" id="inspection_image" class="form-control" accept="image/*" required>
-                            <small class="text-muted">Please provide a clear photo of the completed project for verification.</small>
+                            <small class="text-muted d-block mt-1">Please provide a clear photo of the completed project for verification.</small>
+                            <small class="text-primary fw-bold d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i> Tip: Ensure Location Services (GPS) are enabled on your camera when taking the photo so the project can be geo-tracked.
+                            </small>
                         </div>
 
                         <div class="d-grid gap-2">

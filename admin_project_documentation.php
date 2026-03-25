@@ -2,6 +2,23 @@
 session_start();
 include 'db.php';
 
+// Helper functions to parse EXIF GPS data into decimal coordinates
+function getGpsDecimal($exifCoord, $hemi) {
+    $degrees = count($exifCoord) > 0 ? gps2Num($exifCoord[0]) : 0;
+    $minutes = count($exifCoord) > 1 ? gps2Num($exifCoord[1]) : 0;
+    $seconds = count($exifCoord) > 2 ? gps2Num($exifCoord[2]) : 0;
+    $flip = ($hemi == 'W' or $hemi == 'S') ? -1 : 1;
+    return $flip * ($degrees + $minutes / 60 + $seconds / 3600);
+}
+
+function gps2Num($coordPart) {
+    $parts = explode('/', $coordPart);
+    if (count($parts) <= 0) return 0;
+    if (count($parts) == 1) return floatval($parts[0]);
+    $denominator = floatval($parts[1]);
+    return $denominator != 0 ? floatval($parts[0]) / $denominator : 0;
+}
+
 // Ensure an ID was passed in the URL
 if (!isset($_GET['id'])) {
     header("Location: admin_completed.php");
@@ -31,6 +48,18 @@ $date_ended = $project['completed_at'] ? date('F d, Y - h:i A', strtotime($proje
 
 $doc_path = !empty($project['application_file']) ? "uploads/docs/" . htmlspecialchars($project['application_file']) : null;
 $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecialchars($project['inspection_image']) : null;
+
+// Extract GPS Coordinates from Image
+$latitude = null;
+$longitude = null;
+if ($img_path && file_exists($img_path) && function_exists('exif_read_data')) {
+    // Suppress warnings in case the image doesn't have valid EXIF headers
+    $exif = @exif_read_data($img_path);
+    if ($exif && isset($exif['GPSLatitude'], $exif['GPSLongitude'], $exif['GPSLatitudeRef'], $exif['GPSLongitudeRef'])) {
+        $latitude = getGpsDecimal($exif['GPSLatitude'], $exif['GPSLatitudeRef']);
+        $longitude = getGpsDecimal($exif['GPSLongitude'], $exif['GPSLongitudeRef']);
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -43,6 +72,7 @@ $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecial
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
     body { background-color: #f4f7fb; font-family: 'Poppins', sans-serif; padding-top: 30px; padding-bottom: 50px; }
@@ -61,6 +91,7 @@ $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecial
         body { background-color: white; padding: 0; }
         .report-container { box-shadow: none; max-width: 100%; border: none; }
         .no-print { display: none !important; }
+        #map { display: none !important; } /* Maps generally don't print well */
     }
 </style>
 </head>
@@ -134,7 +165,35 @@ $img_path = !empty($project['inspection_image']) ? "uploads/docs/" . htmlspecial
                     <img src="<?php echo $img_path; ?>" alt="Completed Project Image" class="project-image">
                     <p class="text-muted small mt-2">Verified final output of the project.</p>
                 </div>
-            <?php else: ?>
+                
+                <h4 class="section-title mt-5"><i class="fas fa-map-marked-alt me-2"></i>Project Geo-Location</h4>
+                <?php if ($latitude !== null && $longitude !== null): ?>
+                    <div id="map" style="height: 350px; width: 100%; border-radius: 8px; border: 3px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1;"></div>
+                    <p class="text-muted small mt-2"><i class="fas fa-satellite me-1"></i> Location automatically extracted from image metadata (Lat: <?php echo round($latitude, 6); ?>, Lng: <?php echo round($longitude, 6); ?>).</p>
+
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var lat = <?php echo $latitude; ?>;
+                            var lng = <?php echo $longitude; ?>;
+                            var map = L.map('map').setView([lat, lng], 16);
+
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 19,
+                                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            }).addTo(map);
+
+                            var marker = L.marker([lat, lng]).addTo(map);
+                            marker.bindPopup("<b><?php echo addslashes($title); ?></b><br>Finished Project Location").openPopup();
+                        });
+                    </script>
+                <?php else: ?>
+                    <div class="info-box text-center py-4">
+                        <i class="fas fa-map-marker-slash fs-1 text-muted mb-2"></i>
+                        <p class="text-muted mb-0 fst-italic">No GPS metadata found in the uploaded image. The photo may not have been taken with location services enabled.</p>
+                    </div>
+                <?php endif; ?>
+                <?php else: ?>
                 <div class="info-box text-center py-4">
                     <i class="fas fa-image fs-1 text-muted mb-2"></i>
                     <p class="text-muted mb-0 fst-italic">No inspection image was uploaded.</p>

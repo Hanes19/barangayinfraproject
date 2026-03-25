@@ -7,11 +7,12 @@ $roles = [
     "godsentgracesalazar@gmail.com" => "secretary",
     "fheviealivio@gmail.com" => "collector",
     "courier@example.com" => "courier",
-    "ponsecakathy@gmail.com" => "admin",
+    "ponsecakathy@gmail.com" => "admin",         // Admin for Cluster 1
+    "admin_cluster2@gmail.com" => "admin",       // Admin for Cluster 2
     "jyanson@aclcbukidnon.com" => "client",
-    "cpdc@gmail.com" => "cpdc",          // CPDC User
-    "ceo@gmail.com" => "ceo_main",       // CEO Main User
-    "lnbpres@gmail.com" => "lnbpres",    // LNB President User
+    "cpdc@gmail.com" => "cpdc",                  // CPDC User
+    "ceo@gmail.com" => "ceo_main",               // CEO Main User
+    "lnbpres@gmail.com" => "lnbpres",            // LNB President User
 ];
 
 $error = "";
@@ -37,6 +38,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['full_name'] = ucfirst(explode("@", $email)[0]);
         $_SESSION['email']     = $email;
         $_SESSION['role']      = $role;
+
+        // --- ADMIN CLUSTER ASSIGNMENT LOGIC ---
+        if ($role === "admin") {
+            if ($email === "ponsecakathy@gmail.com") {
+                $_SESSION['admin_cluster'] = 1; // Poblacion, Lumbo
+            } elseif ($email === "admin_cluster2@gmail.com") {
+                $_SESSION['admin_cluster'] = 2; // Batangan, Bagontaas, Mailag
+            } else {
+                $_SESSION['admin_cluster'] = 1; // Default fallback
+            }
+        }
 
         // --- REDIRECT LOGIC ---
         switch($role) {
